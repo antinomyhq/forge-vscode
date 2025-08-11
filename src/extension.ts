@@ -60,11 +60,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Check if Forge is running externally
     const externalRunning = await checkExternalForgeProcess();
 
-    // Check if there's an existing VS Code terminal (any terminal)
-    const existingTerminal =
-      vscode.window.terminals.length > 0
+    // Check if there's an active VS Code terminal, fallback to last terminal if none active
+    const existingTerminal = vscode.window.activeTerminal || 
+      (vscode.window.terminals.length > 0
         ? vscode.window.terminals[vscode.window.terminals.length - 1]
-        : null;
+        : null);
 
     // Case 1: Check if forge might be running in the existing VS Code terminal
     if (existingTerminal && externalRunning) {
@@ -99,6 +99,9 @@ export function activate(context: vscode.ExtensionContext) {
             "Forge is starting in VS Code terminal. File reference copied to clipboard. Paste it when ready."
           );
           return;
+        } else {
+          // User dismissed the dialog, do nothing
+          return;
         }
       }
     }
@@ -127,11 +130,36 @@ export function activate(context: vscode.ExtensionContext) {
           `File reference copied to clipboard. Please switch to your external Forge terminal and paste.`
         );
         return;
+      } else if (action === "Create New VS Code Terminal") {
+        // User explicitly chose to create new terminal
+        const terminal = vscode.window.createTerminal({
+          name: TERMINAL_NAME,
+          iconPath: {
+            light: vscode.Uri.file(
+              context.asAbsolutePath("images/favicon-dark.svg")
+            ),
+            dark: vscode.Uri.file(
+              context.asAbsolutePath("images/favicon-light.svg")
+            ),
+          },
+          location: {
+            viewColumn: vscode.ViewColumn.Beside,
+            preserveFocus: false,
+          },
+        });
+        terminal.show();
+        terminal.sendText("forge", true);
+        vscode.window.showInformationMessage(
+          "New forge session started. File reference copied to clipboard. Paste it when ready."
+        );
+        return;
+      } else {
+        // User dismissed the dialog, do nothing
+        return;
       }
-      // If "Create New VS Code Terminal" is selected, fall through to create new terminal
     }
 
-    // Case 3: No forge running anywhere - show message, create terminal and run forge
+    // Case 4: No forge running anywhere - show message, create terminal and run forge
     if (!externalRunning) {
       // Show message that forge is not running
       const action = await vscode.window.showInformationMessage(
@@ -165,32 +193,11 @@ export function activate(context: vscode.ExtensionContext) {
           "Forge is starting... File reference copied to clipboard. Paste it when ready."
         );
       }
+      // If user dismissed the dialog, do nothing (just return)
       return;
-    } else {
-      // Forge is running externally, but user chose to create new terminal
-      const terminal = vscode.window.createTerminal({
-        name: TERMINAL_NAME,
-        iconPath: {
-          light: vscode.Uri.file(
-            context.asAbsolutePath("images/favicon-dark.svg")
-          ),
-          dark: vscode.Uri.file(
-            context.asAbsolutePath("images/favicon-light.svg")
-          ),
-        },
-        location: {
-          viewColumn: vscode.ViewColumn.Beside,
-          preserveFocus: false,
-        },
-      });
-      terminal.show();
-      terminal.sendText("forge", true);
-
-      // Don't auto-paste reference, let user paste manually
-      vscode.window.showInformationMessage(
-        "New forge session started. File reference copied to clipboard. Paste it when ready."
-      );
     }
+
+
   }
 
   async function checkForgeAvailability(): Promise<boolean> {
