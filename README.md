@@ -1,18 +1,20 @@
-# 🔥 Forge VS Code Extension
+# 🔥 Forge Code VSCode Extension
 
 <div align="center">
 
-**AI-enabled pair programmer for Claude, GPT, and 300+ models**
+**AI software engineering agent integration for VS Code**
+
+Seamlessly integrate [Forge Code](https://forgecode.dev) AI assistant into your VS Code workflow with intelligent file referencing.
 
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue?logo=visual-studio-code)](https://marketplace.visualstudio.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-0.4.0-orange.svg)](package.json)
 
 </div>
 
 <!-- ![Demo](images/Animation.gif) -->
 
-This VS Code extension provides a simple way to copy file references in the format that [Forge CLI](https://forgecode.dev) understands.
+This VS Code extension provides seamless integration with [Forge Code](https://forgecode.dev), an AI software engineering agent that runs in your terminal. The extension enables quick copying of file references in the exact format that Forge understands, streamlining your AI-assisted development workflow.
 
 ## Features
 
@@ -23,14 +25,29 @@ This VS Code extension provides a simple way to copy file references in the form
 
 ## Requirements
 
-- [Forge CLI](https://forgecode.dev) must be installed and available in your PATH
+- [Forge Code](https://forgecode.dev) must be installed and available in your PATH
 - VS Code 1.102.0 or higher
 
 ## Installation
 
-1. Install the Forge CLI from [forgecode.dev](https://forgecode.dev)
-2. Install this extension from the VS Code marketplace
-3. Start using Forge directly from VS Code!
+### Step 1: Install Forge Code
+
+**Option A: NPX (Quick Start)**
+```bash
+cd your/project/directory
+npx forgecode@latest
+```
+
+**Option B: Global Installation**
+```bash
+npm install -g forgecode
+# or visit https://forgecode.dev for other installation methods
+```
+
+### Step 2: Install VS Code Extension
+
+1. Install this extension from the VS Code marketplace
+2. Start using Forge directly from VS Code!
 
 ## Usage
 
@@ -87,11 +104,35 @@ forge @[src/components/Button.tsx:10:20] explain this code
 
 ### Forge Not Installed
 
-If you see an installation prompt:
+If you see an installation prompt, you have several options:
 
-1. Click "Install Forge" to visit [forgecode.dev](https://forgecode.dev)
-2. Follow the installation instructions for your platform
-3. Verify installation: `forge --version`
+**Option 1: NPX (Quick Start)**
+```bash
+cd your/project/directory
+npx forgecode@latest
+```
+
+**Option 2: Global Installation**
+```bash
+npm install -g forgecode
+# Then verify installation
+forge --version
+```
+
+**Option 3: Other Methods**
+1. Visit [forgecode.dev](https://forgecode.dev) for Homebrew, direct download, and other installation options.
+2. Follow the setup instructions for your platform.
+
+### Getting Started with Forge
+```bash
+# Navigate to your project
+cd path/to/your/project
+
+# Start Forge (interactive REPL)
+forge
+```
+
+For complete documentation, visit [forgecode.dev/docs](https://forgecode.dev/docs/).
 
 ## License
 
