@@ -1,0 +1,28 @@
+# Node.js dependencies
+node_modules/
+
+# VS Code build output
+out/
+dist/
+.vscode-test/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# VS Code workspace settings
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Coverage reports
+coverage/
+
+# Env files
+.env
