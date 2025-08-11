@@ -95,4 +95,4 @@ If you see an installation prompt:
 
 ## License
 
-MIT - See the Forge project for details.
+Apache 2.0 - See the LICENSE file for details.
