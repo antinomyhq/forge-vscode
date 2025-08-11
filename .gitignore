@@ -21,6 +21,10 @@ Thumbs.db
 !.vscode/launch.json
 !.vscode/tasks.json
 
+# Ignore dump and crash files
+*.stackdump
+*.html
+
 # Coverage reports
 coverage/
 
