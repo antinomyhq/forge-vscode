@@ -61,7 +61,8 @@ export function activate(context: vscode.ExtensionContext) {
     const externalRunning = await checkExternalForgeProcess();
 
     // Check if there's an active VS Code terminal, fallback to last terminal if none active
-    const existingTerminal = vscode.window.activeTerminal || 
+    const existingTerminal =
+      vscode.window.activeTerminal ||
       (vscode.window.terminals.length > 0
         ? vscode.window.terminals[vscode.window.terminals.length - 1]
         : null);
@@ -79,19 +80,13 @@ export function activate(context: vscode.ExtensionContext) {
         existingTerminal.sendText(fileRef, false);
         return;
       } else {
-        // Forge is running externally, show options
+        // Forge is running externally: inform and offer to launch inside VS Code
         const action = await vscode.window.showInformationMessage(
-          `Forge is running in an external terminal. What would you like to do?`,
-          "Use External Terminal",
-          "Create New VS Code Terminal"
+          `Forge is running in an external terminal. File reference copied - paste it there to continue.`,
+          "Launch Forge Inside VSCode"
         );
 
-        if (action === "Use External Terminal") {
-          vscode.window.showInformationMessage(
-            `File reference copied to clipboard. Please switch to your external Forge terminal and paste.`
-          );
-          return;
-        } else if (action === "Create New VS Code Terminal") {
+        if (action === "Launch Forge Inside VSCode") {
           // Use existing VS Code terminal, start forge, copy to clipboard
           existingTerminal.show();
           existingTerminal.sendText("forge", true);
@@ -119,18 +114,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Case 3: Forge running externally (no VS Code terminal)
     if (externalRunning) {
       const action = await vscode.window.showInformationMessage(
-        `Forge is running in an external terminal. What would you like to do?`,
-        "Use External Terminal",
-        "Create New VS Code Terminal"
+        `Forge is running in an external terminal. File reference copied - paste it there to continue.`,
+        "Launch Forge Inside VSCode"
       );
 
-      if (action === "Use External Terminal") {
-        // Try to bring external terminal to focus and paste
-        vscode.window.showInformationMessage(
-          `File reference copied to clipboard. Please switch to your external Forge terminal and paste.`
-        );
-        return;
-      } else if (action === "Create New VS Code Terminal") {
+      if (action === "Launch Forge Inside VSCode") {
         // User explicitly chose to create new terminal
         const terminal = vscode.window.createTerminal({
           name: TERMINAL_NAME,
@@ -196,8 +184,6 @@ export function activate(context: vscode.ExtensionContext) {
       // If user dismissed the dialog, do nothing (just return)
       return;
     }
-
-
   }
 
   async function checkForgeAvailability(): Promise<boolean> {
