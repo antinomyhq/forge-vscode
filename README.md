@@ -12,7 +12,7 @@ Seamlessly integrate [Forge Code](https://forgecode.dev) AI assistant into your 
 
 </div>
 
-![Demo](images/demo.gif)
+![Demo](https://raw.githubusercontent.com/antinomyhq/forge-vscode/main/images/demo.gif)
 
 This VS Code extension provides seamless integration with [Forge Code](https://forgecode.dev), an AI software engineering agent that runs in your terminal. The extension enables quick copying of file references in the exact format that Forge understands, streamlining your AI-assisted development workflow.
 
