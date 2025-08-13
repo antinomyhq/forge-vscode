@@ -12,7 +12,7 @@ Seamlessly integrate [Forge Code](https://forgecode.dev) AI assistant into your 
 
 </div>
 
-<!-- ![Demo](images/Animation.gif) -->
+![Demo](images/demo.gif)
 
 This VS Code extension provides seamless integration with [Forge Code](https://forgecode.dev), an AI software engineering agent that runs in your terminal. The extension enables quick copying of file references in the exact format that Forge understands, streamlining your AI-assisted development workflow.
 
@@ -33,12 +33,14 @@ This VS Code extension provides seamless integration with [Forge Code](https://f
 ### Step 1: Install Forge Code
 
 **Option A: NPX (Quick Start)**
+
 ```bash
 cd your/project/directory
 npx forgecode@latest
 ```
 
 **Option B: Global Installation**
+
 ```bash
 npm install -g forgecode
 # or visit https://forgecode.dev for other installation methods
@@ -107,12 +109,14 @@ forge @[src/components/Button.tsx:10:20] explain this code
 If you see an installation prompt, you have several options:
 
 **Option 1: NPX (Quick Start)**
+
 ```bash
 cd your/project/directory
 npx forgecode@latest
 ```
 
 **Option 2: Global Installation**
+
 ```bash
 npm install -g forgecode
 # Then verify installation
@@ -120,10 +124,12 @@ forge --version
 ```
 
 **Option 3: Other Methods**
+
 1. Visit [forgecode.dev](https://forgecode.dev) for Homebrew, direct download, and other installation options.
 2. Follow the setup instructions for your platform.
 
 ### Getting Started with Forge
+
 ```bash
 # Navigate to your project
 cd path/to/your/project
