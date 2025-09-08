@@ -235,10 +235,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const document = activeEditor.document;
-    const workspaceFolder = vscode.workspace.getWorkspaceFolder(document.uri);
-    if (!workspaceFolder) {
-      return;
-    }
 
     // Get the absolute path
     const absolutePath = document.uri.fsPath;
