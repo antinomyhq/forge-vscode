@@ -2,7 +2,7 @@
   "name": "forge-vscode",
   "displayName": "Forge Code",
   "description": "AI-enabled pair programmer for Claude, GPT, and 300+ models. Seamlessly integrate Forge AI assistant into your VS Code workflow.",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "icon": "images/icon.png",
   "publisher": "ForgeCode",
   "author": "Antinomy <support@antinomy.ai>",
@@ -35,26 +35,29 @@
   "contributes": {
     "commands": [
       {
-        "command": "forgecode.copyFileReference",
-        "title": "Copy File Reference",
+        "command": "forgecode.startNewForgeSession",
+        "title": "Start New Forge Session",
         "icon": {
           "light": "images/favicon-dark.svg",
           "dark": "images/favicon-light.svg"
         }
+      },
+      {
+        "command": "forgecode.copyFileReference",
+        "title": "Copy File Reference"
       }
     ],
     "menus": {
       "editor/title": [
         {
-          "command": "forgecode.copyFileReference",
+          "command": "forgecode.startNewForgeSession",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
-          "command": "forgecode.copyFileReference",
-          "group": "navigation",
-          "when": "editorHasSelection"
+          "command": "forgecode.startNewForgeSession",
+          "group": "navigation"
         }
       ]
     },
