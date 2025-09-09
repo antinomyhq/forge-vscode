@@ -35,26 +35,29 @@
   "contributes": {
     "commands": [
       {
-        "command": "forgecode.copyFileReference",
-        "title": "Copy File Reference",
+        "command": "forgecode.startNewForgeSession",
+        "title": "Start New Forge Session",
         "icon": {
           "light": "images/favicon-dark.svg",
           "dark": "images/favicon-light.svg"
         }
+      },
+      {
+        "command": "forgecode.copyFileReference",
+        "title": "Copy File Reference"
       }
     ],
     "menus": {
       "editor/title": [
         {
-          "command": "forgecode.copyFileReference",
+          "command": "forgecode.startNewForgeSession",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
-          "command": "forgecode.copyFileReference",
-          "group": "navigation",
-          "when": "editorHasSelection"
+          "command": "forgecode.startNewForgeSession",
+          "group": "navigation"
         }
       ]
     },
