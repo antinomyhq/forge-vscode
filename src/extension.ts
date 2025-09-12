@@ -265,9 +265,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     const selection = activeEditor.selection;
 
-    // if no selection, return the absolute path
+    // if no selection, return the absolute path in formatted form
     if (selection.isEmpty) {
-      return absolutePath;
+      return `@[${absolutePath}]`;
     }
 
     // Get line numbers (1-based)
