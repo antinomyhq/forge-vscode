@@ -131,24 +131,16 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    // Row 2: Single Forge running inside VS Code ONLY -> Paste directly (no message)
-    // Only after confirming it's not multiple terminals or both external + internal
-    if (
-      targetForgeTerminal &&
-      forgeTerminals.length === 1 &&
-      !hasNonForgeTerminals
-    ) {
+    // Row 2: Single Forge terminal exists -> Paste directly
+    // This handles both cases: with or without non-Forge terminals
+    if (targetForgeTerminal && forgeTerminals.length === 1) {
       targetForgeTerminal.show();
       targetForgeTerminal.sendText(fileRef, false);
       return;
     }
 
-    // Row 1 & 5: No forge running OR Non-Forge terminal exists -> Create new terminal + auto-paste
-    // But exclude cases where external forge is running (should go to Row 3 instead)
-    if (
-      (!externalRunning && !targetForgeTerminal) ||
-      (hasNonForgeTerminals && !targetForgeTerminal && !externalRunning)
-    ) {
+    // Row 1: No Forge terminal exists and no external Forge -> Create new terminal + auto-paste
+    if (!externalRunning && forgeTerminals.length === 0) {
       const terminal = createRightSideTerminal();
       startForgeWithAutoPaste(terminal, fileRef);
       vscode.window.showInformationMessage(FORGE_STARTING_MESSAGE);
