@@ -108,19 +108,16 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Check for different scenarios
     const hasMultipleForgeTerminals = forgeTerminals.length > 1;
-    const hasNonForgeTerminals = vscode.window.terminals.some(
-      (terminal) => !isForgeTerminal(terminal)
-    );
 
-    // Row 6: Multiple Forge terminals -> Show clipboard message (SAME as Row 4)
-    // HIGHEST PRIORITY: Check this first
+    // Scenario 1: Multiple Forge terminals exist
+    // Show clipboard message and let user manually paste to avoid ambiguity
     if (hasMultipleForgeTerminals) {
       vscode.window.showInformationMessage(CLIPBOARD_MESSAGE);
       return;
     }
 
-    // Row 4: Forge running BOTH external + internal -> Use internal (no auto-paste, just clipboard message)
-    // Strong condition: More forge processes than internal terminals = external processes exist
+    // Scenario 2: Both external and internal Forge processes detected
+    // Show clipboard message to avoid conflicts between processes
     const hasBothExternalAndInternal =
       externalRunning &&
       targetForgeTerminal &&
@@ -131,31 +128,25 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    // Row 2: Single Forge running inside VS Code ONLY -> Paste directly (no message)
-    // Only after confirming it's not multiple terminals or both external + internal
-    if (
-      targetForgeTerminal &&
-      forgeTerminals.length === 1 &&
-      !hasNonForgeTerminals
-    ) {
+    // Scenario 3: Single Forge terminal exists in VS Code
+    // Reuse it and paste directly for seamless workflow
+    if (targetForgeTerminal && forgeTerminals.length === 1) {
       targetForgeTerminal.show();
       targetForgeTerminal.sendText(fileRef, false);
       return;
     }
 
-    // Row 1 & 5: No forge running OR Non-Forge terminal exists -> Create new terminal + auto-paste
-    // But exclude cases where external forge is running (should go to Row 3 instead)
-    if (
-      (!externalRunning && !targetForgeTerminal) ||
-      (hasNonForgeTerminals && !targetForgeTerminal && !externalRunning)
-    ) {
+    // Scenario 4: No Forge terminal in VS Code and no external Forge
+    // Create new terminal and auto-paste after startup delay
+    if (!externalRunning && forgeTerminals.length === 0) {
       const terminal = createRightSideTerminal();
       startForgeWithAutoPaste(terminal, fileRef);
       vscode.window.showInformationMessage(FORGE_STARTING_MESSAGE);
       return;
     }
 
-    // Row 3: Forge running external only -> Ask, then auto-paste if user chooses
+    // Scenario 5: Forge running externally only
+    // Prompt user to either continue externally or launch inside VS Code
     if (externalRunning && !targetForgeTerminal) {
       const action = await vscode.window.showInformationMessage(
         `Forge is running in an external terminal. File reference copied - paste it there to continue.`,
