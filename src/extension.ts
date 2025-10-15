@@ -155,7 +155,6 @@ export function activate(context: vscode.ExtensionContext) {
     if (!externalRunning && forgeTerminals.length === 0) {
       const terminal = createRightSideTerminal();
       startForgeWithAutoPaste(terminal, fileRef);
-      vscode.window.showInformationMessage(FORGE_STARTING_MESSAGE);
       return;
     }
 
