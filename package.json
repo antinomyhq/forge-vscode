@@ -73,6 +73,19 @@
           "type": "number",
           "default": 5000,
           "description": "Milliseconds to wait after starting Forge before sending the file reference"
+        },
+        "forge.terminalBehavior": {
+          "type": "string",
+          "enum": [
+            "terminal",
+            "clipboard"
+          ],
+          "enumDescriptions": [
+            "Paste to terminal when possible, copy to clipboard when ambiguous",
+            "Only copy the reference to clipboard, no terminal interaction"
+          ],
+          "default": "terminal",
+          "description": "Controls how the extension interacts with Forge terminals when copying file references"
         }
       }
     },
