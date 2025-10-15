@@ -2,7 +2,7 @@
   "name": "forge-vscode",
   "displayName": "Forge Code",
   "description": "AI-enabled pair programmer for Claude, GPT, and 300+ models. Seamlessly integrate Forge AI assistant into your VS Code workflow.",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "icon": "images/icon.png",
   "publisher": "ForgeCode",
   "author": "Antinomy <support@antinomy.ai>",
