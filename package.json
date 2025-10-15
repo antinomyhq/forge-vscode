@@ -2,7 +2,7 @@
   "name": "forge-vscode",
   "displayName": "Forge Code",
   "description": "AI-enabled pair programmer for Claude, GPT, and 300+ models. Seamlessly integrate Forge AI assistant into your VS Code workflow.",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "icon": "images/icon.png",
   "publisher": "ForgeCode",
   "author": "Antinomy <support@antinomy.ai>",
@@ -73,6 +73,19 @@
           "type": "number",
           "default": 5000,
           "description": "Milliseconds to wait after starting Forge before sending the file reference"
+        },
+        "forge.terminalMode": {
+          "type": "string",
+          "enum": [
+            "reuseOrCreate",
+            "clipboard"
+          ],
+          "enumDescriptions": [
+            "Reuse an existing terminal or create one if not available.",
+            "Only copy the reference to clipboard, no terminal interaction"
+          ],
+          "default": "reuseOrCreate",
+          "description": "Defines how Forge interacts with the terminal when processing file reference operations."
         }
       }
     },

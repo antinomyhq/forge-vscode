@@ -84,6 +84,20 @@ export function activate(context: vscode.ExtensionContext) {
     // Always copy to clipboard first
     await vscode.env.clipboard.writeText(fileRef);
 
+    // Get the terminal mode configuration
+    const terminalMode = vscode.workspace
+      .getConfiguration("forge")
+      .get<string>("terminalMode", "reuseOrCreate");
+
+    // Clipboard mode: Only copy to clipboard, no terminal interaction
+    if (terminalMode === "clipboard") {
+      vscode.window.showInformationMessage(
+        "File reference copied to clipboard."
+      );
+      return;
+    }
+
+    // ReuseOrCreate mode (default): Paste to terminal when possible, copy when ambiguous
     // Check if Forge is running externally and get process count
     const externalRunning = await checkExternalForgeProcess();
     const totalForgeProcesses = await checkForgeProcessCount();
@@ -141,7 +155,6 @@ export function activate(context: vscode.ExtensionContext) {
     if (!externalRunning && forgeTerminals.length === 0) {
       const terminal = createRightSideTerminal();
       startForgeWithAutoPaste(terminal, fileRef);
-      vscode.window.showInformationMessage(FORGE_STARTING_MESSAGE);
       return;
     }
 
