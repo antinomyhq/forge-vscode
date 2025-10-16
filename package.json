@@ -69,23 +69,23 @@
           "default": true,
           "description": "Show installation prompt when Forge is not detected"
         },
-        "forge.startupDelay": {
+        "forge.pasteDelay": {
           "type": "number",
           "default": 5000,
-          "description": "Milliseconds to wait after starting Forge before sending the file reference"
+          "description": "Milliseconds to wait before auto-pasting into new terminal (allows Forge to start)"
         },
         "forge.terminalMode": {
           "type": "string",
           "enum": [
-            "reuseOrCreate",
-            "clipboard"
+            "once",
+            "never"
           ],
           "enumDescriptions": [
-            "Reuse an existing terminal or create one if not available.",
-            "Only copy the reference to clipboard, no terminal interaction"
+            "Open terminal once and reuse it for subsequent operations",
+            "Never open terminal, only copy file reference to clipboard"
           ],
-          "default": "reuseOrCreate",
-          "description": "Defines how Forge interacts with the terminal when processing file reference operations."
+          "default": "once",
+          "description": "Controls terminal interaction when copying file references"
         }
       }
     },
