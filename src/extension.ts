@@ -59,12 +59,12 @@ export function activate(context: vscode.ExtensionContext) {
     if (fileRef) {
       await vscode.env.clipboard.writeText(fileRef);
 
-      const startupDelay = vscode.workspace
+      const pasteDelay = vscode.workspace
         .getConfiguration("forge")
-        .get<number>("startupDelay", 5000);
+        .get<number>("pasteDelay", 5000);
       setTimeout(() => {
         terminal.sendText(fileRef, false);
-      }, startupDelay);
+      }, pasteDelay);
 
       vscode.window.showInformationMessage(
         "New Forge session started. File reference will be pasted automatically."
@@ -87,17 +87,17 @@ export function activate(context: vscode.ExtensionContext) {
     // Get the terminal mode configuration
     const terminalMode = vscode.workspace
       .getConfiguration("forge")
-      .get<string>("terminalMode", "reuseOrCreate");
+      .get<string>("terminalMode", "once");
 
-    // Clipboard mode: Only copy to clipboard, no terminal interaction
-    if (terminalMode === "clipboard") {
+    // Never mode: Only copy to clipboard, no terminal interaction
+    if (terminalMode === "never") {
       vscode.window.showInformationMessage(
         "File reference copied to clipboard."
       );
       return;
     }
 
-    // ReuseOrCreate mode (default): Paste to terminal when possible, copy when ambiguous
+    // Once mode (default): Open terminal once and reuse it, copy when ambiguous
     // Check if Forge is running externally and get process count
     const externalRunning = await checkExternalForgeProcess();
     const totalForgeProcesses = await checkForgeProcessCount();
@@ -206,12 +206,12 @@ export function activate(context: vscode.ExtensionContext) {
     terminal.show();
     terminal.sendText("forge", true);
 
-    const startupDelay = vscode.workspace
+    const pasteDelay = vscode.workspace
       .getConfiguration("forge")
-      .get<number>("startupDelay", DEFAULT_STARTUP_DELAY);
+      .get<number>("pasteDelay", DEFAULT_STARTUP_DELAY);
     setTimeout(() => {
       terminal.sendText(fileRef, false);
-    }, startupDelay);
+    }, pasteDelay);
   }
 
   async function checkExternalForgeProcess(): Promise<boolean> {
