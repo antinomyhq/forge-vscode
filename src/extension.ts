@@ -256,6 +256,39 @@ export function activate(context: vscode.ExtensionContext) {
     });
   }
 
+  /**
+   * Get workspace-relative path for a file URI
+   * Falls back to absolute path if file is not in any workspace folder
+   */
+  function getWorkspaceRelativePath(fileUri: vscode.Uri): string {
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(fileUri);
+
+    if (workspaceFolder) {
+      // Get relative path from workspace root
+      const relativePath = vscode.workspace.asRelativePath(fileUri, false);
+      return relativePath;
+    }
+
+    // Fallback to absolute path if not in workspace
+    return fileUri.fsPath;
+  }
+
+  /**
+   * Get the file path based on user's path format preference
+   */
+  function getFilePath(fileUri: vscode.Uri): string {
+    const pathFormat = vscode.workspace
+      .getConfiguration("forge")
+      .get<string>("pathFormat", "absolute");
+
+    if (pathFormat === "relative") {
+      return getWorkspaceRelativePath(fileUri);
+    }
+
+    // Default to absolute path
+    return fileUri.fsPath;
+  }
+
   function getFileReference(): string | undefined {
     const activeEditor = vscode.window.activeTextEditor;
     if (!activeEditor) {
@@ -264,14 +297,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     const document = activeEditor.document;
 
-    // Get the absolute path
-    const absolutePath = document.uri.fsPath;
+    // Get the file path based on user preference (absolute or relative)
+    const filePath = getFilePath(document.uri);
 
     const selection = activeEditor.selection;
 
-    // if no selection, return the absolute path in formatted form
+    // if no selection, return the file path in formatted form
     if (selection.isEmpty) {
-      return `@[${absolutePath}]`;
+      return `@[${filePath}]`;
     }
 
     // Get line numbers (1-based)
@@ -279,6 +312,6 @@ export function activate(context: vscode.ExtensionContext) {
     const endLine = activeEditor.selection.end.line + 1;
 
     // Always return file reference without symbol name
-    return `@[${absolutePath}:${startLine}:${endLine}]`;
+    return `@[${filePath}:${startLine}:${endLine}]`;
   }
 }

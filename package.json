@@ -86,6 +86,19 @@
           ],
           "default": "once",
           "description": "Controls terminal interaction when copying file references"
+        },
+        "forge.pathFormat": {
+          "type": "string",
+          "enum": [
+            "absolute",
+            "relative"
+          ],
+          "enumDescriptions": [
+            "Use absolute file paths (e.g., /Users/name/project/src/file.ts)",
+            "Use workspace-relative paths (e.g., src/file.ts)"
+          ],
+          "default": "absolute",
+          "description": "File path format when copying references (absolute or relative)"
         }
       }
     },

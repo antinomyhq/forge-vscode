@@ -85,8 +85,30 @@ Access settings via File → Preferences → Settings → Extensions → Forge
 ### Available Settings
 
 - **forge.showInstallationPrompt** (default: `true`): Show installation prompt when Forge is not detected
+- **forge.pasteDelay** (default: `5000`): Milliseconds to wait before auto-pasting into new terminal (allows Forge to start)
+- **forge.terminalMode** (default: `once`): Controls terminal interaction when copying file references
+  - `once` - Open terminal once and reuse it for subsequent operations
+  - `never` - Never open terminal, only copy file reference to clipboard
+- **forge.pathFormat** (default: `absolute`): Path format for file references
+  - `absolute` - Use absolute file paths (e.g., `/Users/name/project/src/file.ts`)
+  - `relative` - Use workspace-relative paths (e.g., `src/file.ts`)
 
 ## Examples
+
+### With Absolute Paths (default)
+
+```bash
+# Select lines 10-20 in Button.tsx and press CTRL+U
+# Result: @[/Users/name/project/src/components/Button.tsx:10:20] copied to clipboard
+
+# Select single line 15 in App.tsx and press CTRL+U
+# Result: @[/Users/name/project/src/App.tsx:15:15] copied to clipboard
+
+# No selection, just press CTRL+U in any file
+# Result: @[/Users/name/project/src/file.ts] copied to clipboard
+```
+
+### With Relative Paths (forge.pathFormat: "relative")
 
 ```bash
 # Select lines 10-20 in Button.tsx and press CTRL+U
@@ -96,7 +118,7 @@ Access settings via File → Preferences → Settings → Extensions → Forge
 # Result: @[src/App.tsx:15:15] copied to clipboard
 
 # No selection, just press CTRL+U in any file
-# Result: <absolute filepath> copied to clipboard
+# Result: @[src/file.ts] copied to clipboard
 
 # Paste in your Forge terminal:
 forge @[src/components/Button.tsx:10:20] explain this code
