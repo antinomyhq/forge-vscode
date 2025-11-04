@@ -45,6 +45,14 @@
       {
         "command": "forgecode.copyFileReference",
         "title": "Copy File Reference"
+      },
+      {
+        "command": "forgecode.copyFileReferenceAbsolute",
+        "title": "Copy Absolute Path"
+      },
+      {
+        "command": "forgecode.copyFileReferenceRelative",
+        "title": "Copy Relative Path"
       }
     ],
     "menus": {
@@ -58,6 +66,16 @@
         {
           "command": "forgecode.startNewForgeSession",
           "group": "navigation"
+        },
+        {
+          "command": "forgecode.copyFileReferenceAbsolute",
+          "group": "9_cutcopypaste",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "forgecode.copyFileReferenceRelative",
+          "group": "9_cutcopypaste",
+          "when": "editorIsOpen"
         }
       ]
     },

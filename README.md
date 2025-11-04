@@ -19,7 +19,6 @@ This VS Code extension provides seamless integration with [Forge Code](https://f
 ## Features
 
 - **Copy File References**: Copy file references with line selections to clipboard
-- **Reference Format**: `@[<filepath>:<line start>:<line end>]` (no symbol name)
 - **Keyboard Shortcut**: Quick access with `CTRL+U` (all platforms)
 - **Installation Prompt**: Suggests Forge installation if not detected
 
@@ -55,7 +54,16 @@ npm install -g forgecode
 
 ### Keyboard Shortcuts
 
-- **CTRL+U**: Copy file reference to clipboard
+- **CTRL+U**: Copy file reference to clipboard (uses `forge.pathFormat` setting)
+
+### Context Menu Commands
+
+Right-click in any editor to access:
+
+- **Copy Absolute Path**: Always copy with absolute path, regardless of settings
+- **Copy Relative Path**: Always copy with workspace-relative path, regardless of settings
+
+These commands are available in the editor context menu (right-click) and provide direct control over the path format, independent of the `forge.pathFormat` setting.
 
 ### File Reference Format
 
@@ -73,10 +81,22 @@ The extension generates references in the exact format that Forge understands:
 
 ### How to Use
 
+#### Method 1: Keyboard Shortcut
+
 1. **Select code** in any file
 2. **Press CTRL+U**
-3. **File reference is copied** to clipboard
+3. **File reference is copied** to clipboard (format based on `forge.pathFormat` setting)
 4. **Paste in any terminal** where Forge is running
+
+#### Method 2: Context Menu (Direct Control)
+
+1. **Select code** in any file (or just open a file)
+2. **Right-click** in the editor
+3. **Choose** either:
+   - **Copy Absolute Path** - Forces absolute path
+   - **Copy Relative Path** - Forces relative path
+4. **File reference is copied** to clipboard
+5. **Paste in any terminal** where Forge is running
 
 ## Configuration
 

@@ -42,9 +42,27 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  // Register Copy File Reference (Absolute) command
+  let copyFileReferenceAbsoluteDisposable = vscode.commands.registerCommand(
+    "forgecode.copyFileReferenceAbsolute",
+    async () => {
+      await copyFileReferenceWithFormat("absolute");
+    }
+  );
+
+  // Register Copy File Reference (Relative) command
+  let copyFileReferenceRelativeDisposable = vscode.commands.registerCommand(
+    "forgecode.copyFileReferenceRelative",
+    async () => {
+      await copyFileReferenceWithFormat("relative");
+    }
+  );
+
   context.subscriptions.push(
     startNewForgeSessionDisposable,
     copyFileReferenceDisposable,
+    copyFileReferenceAbsoluteDisposable,
+    copyFileReferenceRelativeDisposable,
     terminalChangeDisposable
   );
 
@@ -274,10 +292,15 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   /**
-   * Get the file path based on user's path format preference
+   * Get the file path with a specific format (absolute or relative)
+   * If format is not specified, uses the user's preference from settings
    */
-  function getFilePath(fileUri: vscode.Uri): string {
-    const pathFormat = vscode.workspace
+  function getFilePathWithFormat(
+    fileUri: vscode.Uri,
+    format?: "absolute" | "relative"
+  ): string {
+    // If no format specified, use user's preference from settings
+    const pathFormat = format ?? vscode.workspace
       .getConfiguration("forge")
       .get<string>("pathFormat", "absolute");
 
@@ -289,7 +312,7 @@ export function activate(context: vscode.ExtensionContext) {
     return fileUri.fsPath;
   }
 
-  function getFileReference(): string | undefined {
+  function getFileReference(format?: "absolute" | "relative"): string | undefined {
     const activeEditor = vscode.window.activeTextEditor;
     if (!activeEditor) {
       return;
@@ -297,8 +320,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     const document = activeEditor.document;
 
-    // Get the file path based on user preference (absolute or relative)
-    const filePath = getFilePath(document.uri);
+    // Get the file path (with optional format override)
+    const filePath = getFilePathWithFormat(document.uri, format);
 
     const selection = activeEditor.selection;
 
@@ -313,5 +336,23 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Always return file reference without symbol name
     return `@[${filePath}:${startLine}:${endLine}]`;
+  }
+
+  /**
+   * Copy file reference with a specific path format (for context menu commands)
+   */
+  async function copyFileReferenceWithFormat(format: "absolute" | "relative") {
+    const fileRef = getFileReference(format);
+    if (!fileRef) {
+      vscode.window.showWarningMessage("No file found.");
+      return;
+    }
+
+    await vscode.env.clipboard.writeText(fileRef);
+
+    const formatLabel = format === "absolute" ? "absolute" : "relative";
+    vscode.window.showInformationMessage(
+      `File reference (${formatLabel} path) copied to clipboard.`
+    );
   }
 }
