@@ -92,7 +92,7 @@
           "default": 5000,
           "description": "Milliseconds to wait before auto-pasting into new terminal (allows Forge to start)"
         },
-        "forge.terminalMode": {
+        "forge.openTerminal": {
           "type": "string",
           "enum": [
             "once",
@@ -103,7 +103,7 @@
             "Never open terminal, only copy file reference to clipboard"
           ],
           "default": "once",
-          "description": "Controls terminal interaction when copying file references"
+          "description": "Open terminal when copying file references"
         },
         "forge.pathFormat": {
           "type": "string",

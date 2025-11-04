@@ -102,13 +102,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Always copy to clipboard first
     await vscode.env.clipboard.writeText(fileRef);
 
-    // Get the terminal mode configuration
-    const terminalMode = vscode.workspace
+    const openTerminal = vscode.workspace
       .getConfiguration("forge")
-      .get<string>("terminalMode", "once");
+      .get<string>("openTerminal", "once");
 
-    // Never mode: Only copy to clipboard, no terminal interaction
-    if (terminalMode === "never") {
+    if (openTerminal === "never") {
       vscode.window.showInformationMessage(
         "File reference copied to clipboard."
       );
