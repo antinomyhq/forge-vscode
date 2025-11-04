@@ -95,7 +95,7 @@
         "forge.pasteDelay": {
           "type": "number",
           "default": 5000,
-          "description": "Milliseconds to wait before auto-pasting into new terminal (allows Forge to start)"
+          "description": "Delay in milliseconds to allow Forge to start before auto-pasting file references (only works when autoPaste is enabled)"
         },
         "forge.openTerminal": {
           "type": "string",
