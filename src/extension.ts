@@ -34,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  // Register Ctrl+U command (Copy File Reference)
+  // Register Ctrl+U command - respects user settings
   let copyFileReferenceDisposable = vscode.commands.registerCommand(
     "forgecode.copyFileReference",
     async () => {
@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  // Register Copy File Reference (Absolute) command
+  // Register context menu commands - force specific path formats
   let copyFileReferenceAbsoluteDisposable = vscode.commands.registerCommand(
     "forgecode.copyFileReferenceAbsolute",
     async () => {
@@ -50,7 +50,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  // Register Copy File Reference (Relative) command
   let copyFileReferenceRelativeDisposable = vscode.commands.registerCommand(
     "forgecode.copyFileReferenceRelative",
     async () => {
@@ -67,26 +66,37 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   async function startNewForgeSession() {
-    // Start new Forge session - no mandatory file selection
+    // Create and start new Forge terminal
     const terminal = createRightSideTerminal();
     terminal.show();
     terminal.sendText("forge", true);
 
-    // If there's a file reference, copy it and auto-paste
+    // Copy current file reference to clipboard
     const fileRef = getFileReference();
     if (fileRef) {
       await vscode.env.clipboard.writeText(fileRef);
 
-      const pasteDelay = vscode.workspace
+      // Check if auto-paste is enabled
+      const autoPaste = vscode.workspace
         .getConfiguration("forge")
-        .get<number>("pasteDelay", 5000);
-      setTimeout(() => {
-        terminal.sendText(fileRef, false);
-      }, pasteDelay);
+        .get<boolean>("autoPaste", true);
 
-      vscode.window.showInformationMessage(
-        "New Forge session started. File reference will be pasted automatically."
-      );
+      if (autoPaste) {
+        const pasteDelay = vscode.workspace
+          .getConfiguration("forge")
+          .get<number>("pasteDelay", 5000);
+        setTimeout(() => {
+          terminal.sendText(fileRef, false);
+        }, pasteDelay);
+
+        vscode.window.showInformationMessage(
+          "New Forge session started. File reference will be pasted automatically."
+        );
+      } else {
+        vscode.window.showInformationMessage(
+          "New Forge session started. File reference copied to clipboard."
+        );
+      }
     } else {
       vscode.window.showInformationMessage("New Forge session started.");
     }
@@ -158,11 +168,21 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    // Scenario 3: Single Forge terminal exists in VS Code
-    // Reuse it and paste directly for seamless workflow
+    // Scenario 3: Single Forge terminal exists - reuse it
     if (targetForgeTerminal && forgeTerminals.length === 1) {
       targetForgeTerminal.show();
-      targetForgeTerminal.sendText(fileRef, false);
+
+      const autoPaste = vscode.workspace
+        .getConfiguration("forge")
+        .get<boolean>("autoPaste", true);
+
+      if (autoPaste) {
+        targetForgeTerminal.sendText(fileRef, false);
+      } else {
+        vscode.window.showInformationMessage(
+          "File reference copied to clipboard."
+        );
+      }
       return;
     }
 
@@ -219,15 +239,23 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   function startForgeWithAutoPaste(terminal: vscode.Terminal, fileRef: string) {
+    // Start Forge in the terminal
     terminal.show();
     terminal.sendText("forge", true);
 
-    const pasteDelay = vscode.workspace
+    const autoPaste = vscode.workspace
       .getConfiguration("forge")
-      .get<number>("pasteDelay", DEFAULT_STARTUP_DELAY);
-    setTimeout(() => {
-      terminal.sendText(fileRef, false);
-    }, pasteDelay);
+      .get<boolean>("autoPaste", true);
+
+    if (autoPaste) {
+      const pasteDelay = vscode.workspace
+        .getConfiguration("forge")
+        .get<number>("pasteDelay", DEFAULT_STARTUP_DELAY);
+      setTimeout(() => {
+        terminal.sendText(fileRef, false);
+      }, pasteDelay);
+    }
+    // When disabled: only start Forge, no auto-paste
   }
 
   async function checkExternalForgeProcess(): Promise<boolean> {
@@ -339,6 +367,7 @@ export function activate(context: vscode.ExtensionContext) {
   /**
    * Copy file reference with a specific path format (for context menu commands)
    */
+  // Context menu commands - only copy to clipboard (no auto-paste)
   async function copyFileReferenceWithFormat(format: "absolute" | "relative") {
     const fileRef = getFileReference(format);
     if (!fileRef) {
@@ -346,6 +375,7 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
+    // Always just copy to clipboard for context menu commands
     await vscode.env.clipboard.writeText(fileRef);
 
     const formatLabel = format === "absolute" ? "absolute" : "relative";

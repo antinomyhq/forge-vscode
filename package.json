@@ -87,6 +87,11 @@
           "default": true,
           "description": "Show installation prompt when Forge is not detected"
         },
+        "forge.autoPaste": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically paste file references into terminals"
+        },
         "forge.pasteDelay": {
           "type": "number",
           "default": 5000,
