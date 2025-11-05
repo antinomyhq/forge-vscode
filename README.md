@@ -19,7 +19,6 @@ This VS Code extension provides seamless integration with [Forge Code](https://f
 ## Features
 
 - **Copy File References**: Copy file references with line selections to clipboard
-- **Reference Format**: `@[<filepath>:<line start>:<line end>]` (no symbol name)
 - **Keyboard Shortcut**: Quick access with `CTRL+U` (all platforms)
 - **Installation Prompt**: Suggests Forge installation if not detected
 
@@ -55,7 +54,16 @@ npm install -g forgecode
 
 ### Keyboard Shortcuts
 
-- **CTRL+U**: Copy file reference to clipboard
+- **CTRL+U**: Copy file reference to clipboard (uses `forge.pathFormat` setting)
+
+### Context Menu Commands
+
+Right-click in any editor to access:
+
+- **Copy Absolute Path**: Always copy with absolute path, regardless of settings
+- **Copy Relative Path**: Always copy with workspace-relative path, regardless of settings
+
+These commands are available in the editor context menu (right-click) and provide direct control over the path format, independent of the `forge.pathFormat` setting.
 
 ### File Reference Format
 
@@ -73,10 +81,22 @@ The extension generates references in the exact format that Forge understands:
 
 ### How to Use
 
+#### Method 1: Keyboard Shortcut
+
 1. **Select code** in any file
 2. **Press CTRL+U**
-3. **File reference is copied** to clipboard
+3. **File reference is copied** to clipboard (format based on `forge.pathFormat` setting)
 4. **Paste in any terminal** where Forge is running
+
+#### Method 2: Context Menu (Direct Control)
+
+1. **Select code** in any file (or just open a file)
+2. **Right-click** in the editor
+3. **Choose** either:
+   - **Copy Absolute Path** - Forces absolute path
+   - **Copy Relative Path** - Forces relative path
+4. **File reference is copied** to clipboard
+5. **Paste in any terminal** where Forge is running
 
 ## Configuration
 
@@ -85,8 +105,31 @@ Access settings via File → Preferences → Settings → Extensions → Forge
 ### Available Settings
 
 - **forge.showInstallationPrompt** (default: `true`): Show installation prompt when Forge is not detected
+- **forge.autoPaste** (default: `true`): Automatically paste file references into terminals
+- **forge.pasteDelay** (default: `5000`): Delay in milliseconds to allow Forge to start before auto-pasting file references (only works when autoPaste is enabled)
+- **forge.openTerminal** (default: `once`): Open terminal when copying file references
+  - `once` - Open terminal once and reuse it for subsequent operations
+  - `never` - Never open terminal, only copy file reference to clipboard
+- **forge.pathFormat** (default: `absolute`): Path format for file references
+  - `absolute` - Use absolute file paths (e.g., `/Users/name/project/src/file.ts`)
+  - `relative` - Use workspace-relative paths (e.g., `src/file.ts`)
 
 ## Examples
+
+### With Absolute Paths (default)
+
+```bash
+# Select lines 10-20 in Button.tsx and press CTRL+U
+# Result: @[/Users/name/project/src/components/Button.tsx:10:20] copied to clipboard
+
+# Select single line 15 in App.tsx and press CTRL+U
+# Result: @[/Users/name/project/src/App.tsx:15:15] copied to clipboard
+
+# No selection, just press CTRL+U in any file
+# Result: @[/Users/name/project/src/file.ts] copied to clipboard
+```
+
+### With Relative Paths (forge.pathFormat: "relative")
 
 ```bash
 # Select lines 10-20 in Button.tsx and press CTRL+U
@@ -96,7 +139,7 @@ Access settings via File → Preferences → Settings → Extensions → Forge
 # Result: @[src/App.tsx:15:15] copied to clipboard
 
 # No selection, just press CTRL+U in any file
-# Result: <absolute filepath> copied to clipboard
+# Result: @[src/file.ts] copied to clipboard
 
 # Paste in your Forge terminal:
 forge @[src/components/Button.tsx:10:20] explain this code

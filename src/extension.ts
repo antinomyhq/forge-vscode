@@ -34,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  // Register Ctrl+U command (Copy File Reference)
+  // Register Ctrl+U command - respects user settings
   let copyFileReferenceDisposable = vscode.commands.registerCommand(
     "forgecode.copyFileReference",
     async () => {
@@ -42,33 +42,61 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
+  // Register context menu commands - force specific path formats
+  let copyFileReferenceAbsoluteDisposable = vscode.commands.registerCommand(
+    "forgecode.copyFileReferenceAbsolute",
+    async () => {
+      await copyFileReferenceWithFormat("absolute");
+    }
+  );
+
+  let copyFileReferenceRelativeDisposable = vscode.commands.registerCommand(
+    "forgecode.copyFileReferenceRelative",
+    async () => {
+      await copyFileReferenceWithFormat("relative");
+    }
+  );
+
   context.subscriptions.push(
     startNewForgeSessionDisposable,
     copyFileReferenceDisposable,
+    copyFileReferenceAbsoluteDisposable,
+    copyFileReferenceRelativeDisposable,
     terminalChangeDisposable
   );
 
   async function startNewForgeSession() {
-    // Start new Forge session - no mandatory file selection
+    // Create and start new Forge terminal
     const terminal = createRightSideTerminal();
     terminal.show();
     terminal.sendText("forge", true);
 
-    // If there's a file reference, copy it and auto-paste
+    // Copy current file reference to clipboard
     const fileRef = getFileReference();
     if (fileRef) {
       await vscode.env.clipboard.writeText(fileRef);
 
-      const pasteDelay = vscode.workspace
+      // Check if auto-paste is enabled
+      const autoPaste = vscode.workspace
         .getConfiguration("forge")
-        .get<number>("pasteDelay", 5000);
-      setTimeout(() => {
-        terminal.sendText(fileRef, false);
-      }, pasteDelay);
+        .get<boolean>("autoPaste", true);
 
-      vscode.window.showInformationMessage(
-        "New Forge session started. File reference will be pasted automatically."
-      );
+      if (autoPaste) {
+        const pasteDelay = vscode.workspace
+          .getConfiguration("forge")
+          .get<number>("pasteDelay", 5000);
+        setTimeout(() => {
+          terminal.sendText(fileRef, false);
+        }, pasteDelay);
+
+        vscode.window.showInformationMessage(
+          "New Forge session started. File reference will be pasted automatically."
+        );
+      } else {
+        vscode.window.showInformationMessage(
+          "New Forge session started. File reference copied to clipboard."
+        );
+      }
     } else {
       vscode.window.showInformationMessage("New Forge session started.");
     }
@@ -84,13 +112,11 @@ export function activate(context: vscode.ExtensionContext) {
     // Always copy to clipboard first
     await vscode.env.clipboard.writeText(fileRef);
 
-    // Get the terminal mode configuration
-    const terminalMode = vscode.workspace
+    const openTerminal = vscode.workspace
       .getConfiguration("forge")
-      .get<string>("terminalMode", "once");
+      .get<string>("openTerminal", "once");
 
-    // Never mode: Only copy to clipboard, no terminal interaction
-    if (terminalMode === "never") {
+    if (openTerminal === "never") {
       vscode.window.showInformationMessage(
         "File reference copied to clipboard."
       );
@@ -142,11 +168,21 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    // Scenario 3: Single Forge terminal exists in VS Code
-    // Reuse it and paste directly for seamless workflow
+    // Scenario 3: Single Forge terminal exists - reuse it
     if (targetForgeTerminal && forgeTerminals.length === 1) {
       targetForgeTerminal.show();
-      targetForgeTerminal.sendText(fileRef, false);
+
+      const autoPaste = vscode.workspace
+        .getConfiguration("forge")
+        .get<boolean>("autoPaste", true);
+
+      if (autoPaste) {
+        targetForgeTerminal.sendText(fileRef, false);
+      } else {
+        vscode.window.showInformationMessage(
+          "File reference copied to clipboard."
+        );
+      }
       return;
     }
 
@@ -203,15 +239,23 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   function startForgeWithAutoPaste(terminal: vscode.Terminal, fileRef: string) {
+    // Start Forge in the terminal
     terminal.show();
     terminal.sendText("forge", true);
 
-    const pasteDelay = vscode.workspace
+    const autoPaste = vscode.workspace
       .getConfiguration("forge")
-      .get<number>("pasteDelay", DEFAULT_STARTUP_DELAY);
-    setTimeout(() => {
-      terminal.sendText(fileRef, false);
-    }, pasteDelay);
+      .get<boolean>("autoPaste", true);
+
+    if (autoPaste) {
+      const pasteDelay = vscode.workspace
+        .getConfiguration("forge")
+        .get<number>("pasteDelay", DEFAULT_STARTUP_DELAY);
+      setTimeout(() => {
+        terminal.sendText(fileRef, false);
+      }, pasteDelay);
+    }
+    // When disabled: only start Forge, no auto-paste
   }
 
   async function checkExternalForgeProcess(): Promise<boolean> {
@@ -256,7 +300,45 @@ export function activate(context: vscode.ExtensionContext) {
     });
   }
 
-  function getFileReference(): string | undefined {
+  /**
+   * Get workspace-relative path for a file URI
+   * Falls back to absolute path if file is not in any workspace folder
+   */
+  function getWorkspaceRelativePath(fileUri: vscode.Uri): string {
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(fileUri);
+
+    if (workspaceFolder) {
+      // Get relative path from workspace root
+      const relativePath = vscode.workspace.asRelativePath(fileUri, false);
+      return relativePath;
+    }
+
+    // Fallback to absolute path if not in workspace
+    return fileUri.fsPath;
+  }
+
+  /**
+   * Get the file path with a specific format (absolute or relative)
+   * If format is not specified, uses the user's preference from settings
+   */
+  function getFilePathWithFormat(
+    fileUri: vscode.Uri,
+    format?: "absolute" | "relative"
+  ): string {
+    // If no format specified, use user's preference from settings
+    const pathFormat = format ?? vscode.workspace
+      .getConfiguration("forge")
+      .get<string>("pathFormat", "absolute");
+
+    if (pathFormat === "relative") {
+      return getWorkspaceRelativePath(fileUri);
+    }
+
+    // Default to absolute path
+    return fileUri.fsPath;
+  }
+
+  function getFileReference(format?: "absolute" | "relative"): string | undefined {
     const activeEditor = vscode.window.activeTextEditor;
     if (!activeEditor) {
       return;
@@ -264,14 +346,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     const document = activeEditor.document;
 
-    // Get the absolute path
-    const absolutePath = document.uri.fsPath;
+    // Get the file path (with optional format override)
+    const filePath = getFilePathWithFormat(document.uri, format);
 
     const selection = activeEditor.selection;
 
-    // if no selection, return the absolute path in formatted form
+    // if no selection, return the file path in formatted form
     if (selection.isEmpty) {
-      return `@[${absolutePath}]`;
+      return `@[${filePath}]`;
     }
 
     // Get line numbers (1-based)
@@ -279,6 +361,26 @@ export function activate(context: vscode.ExtensionContext) {
     const endLine = activeEditor.selection.end.line + 1;
 
     // Always return file reference without symbol name
-    return `@[${absolutePath}:${startLine}:${endLine}]`;
+    return `@[${filePath}:${startLine}:${endLine}]`;
+  }
+
+  /**
+   * Copy file reference with a specific path format (for context menu commands)
+   */
+  // Context menu commands - only copy to clipboard (no auto-paste)
+  async function copyFileReferenceWithFormat(format: "absolute" | "relative") {
+    const fileRef = getFileReference(format);
+    if (!fileRef) {
+      vscode.window.showWarningMessage("No file found.");
+      return;
+    }
+
+    // Always just copy to clipboard for context menu commands
+    await vscode.env.clipboard.writeText(fileRef);
+
+    const formatLabel = format === "absolute" ? "absolute" : "relative";
+    vscode.window.showInformationMessage(
+      `File reference (${formatLabel} path) copied to clipboard.`
+    );
   }
 }

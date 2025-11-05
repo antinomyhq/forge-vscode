@@ -2,7 +2,7 @@
   "name": "forge-vscode",
   "displayName": "Forge Code",
   "description": "AI-enabled pair programmer for Claude, GPT, and 300+ models. Seamlessly integrate Forge AI assistant into your VS Code workflow.",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "icon": "images/icon.png",
   "publisher": "ForgeCode",
   "author": "Antinomy <support@antinomy.ai>",
@@ -45,6 +45,14 @@
       {
         "command": "forgecode.copyFileReference",
         "title": "Copy File Reference"
+      },
+      {
+        "command": "forgecode.copyFileReferenceAbsolute",
+        "title": "Copy Absolute Path"
+      },
+      {
+        "command": "forgecode.copyFileReferenceRelative",
+        "title": "Copy Relative Path"
       }
     ],
     "menus": {
@@ -58,6 +66,16 @@
         {
           "command": "forgecode.startNewForgeSession",
           "group": "navigation"
+        },
+        {
+          "command": "forgecode.copyFileReferenceAbsolute",
+          "group": "9_cutcopypaste",
+          "when": "editorIsOpen"
+        },
+        {
+          "command": "forgecode.copyFileReferenceRelative",
+          "group": "9_cutcopypaste",
+          "when": "editorIsOpen"
         }
       ]
     },
@@ -69,12 +87,17 @@
           "default": true,
           "description": "Show installation prompt when Forge is not detected"
         },
+        "forge.autoPaste": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically paste file references into terminals"
+        },
         "forge.pasteDelay": {
           "type": "number",
           "default": 5000,
-          "description": "Milliseconds to wait before auto-pasting into new terminal (allows Forge to start)"
+          "description": "Delay in milliseconds to allow Forge to start before auto-pasting file references (only works when autoPaste is enabled)"
         },
-        "forge.terminalMode": {
+        "forge.openTerminal": {
           "type": "string",
           "enum": [
             "once",
@@ -85,7 +108,20 @@
             "Never open terminal, only copy file reference to clipboard"
           ],
           "default": "once",
-          "description": "Controls terminal interaction when copying file references"
+          "description": "Open terminal when copying file references"
+        },
+        "forge.pathFormat": {
+          "type": "string",
+          "enum": [
+            "absolute",
+            "relative"
+          ],
+          "enumDescriptions": [
+            "Use absolute file paths (e.g., /Users/name/project/src/file.ts)",
+            "Use workspace-relative paths (e.g., src/file.ts)"
+          ],
+          "default": "absolute",
+          "description": "File path format when copying references (absolute or relative)"
         }
       }
     },
