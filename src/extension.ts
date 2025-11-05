@@ -10,6 +10,25 @@ const FORGE_STARTING_MESSAGE =
 // This method is called when your extension is deactivated
 export function deactivate() {}
 
+function showNotificationIfEnabled(message: string, type: 'info' | 'warning' | 'error' = 'info', ...items: string[]) {
+  const showNotifications = vscode.workspace
+    .getConfiguration("forge")
+    .get<boolean>("showNotifications", true);
+
+  if (!showNotifications) {
+    return Promise.resolve(undefined);
+  }
+
+  switch (type) {
+    case 'warning':
+      return vscode.window.showWarningMessage(message, ...items);
+    case 'error':
+      return vscode.window.showErrorMessage(message, ...items);
+    default:
+      return vscode.window.showInformationMessage(message, ...items);
+  }
+}
+
 export function activate(context: vscode.ExtensionContext) {
   // Track the last focused Forge terminal
   let lastFocusedForgeTerminal: vscode.Terminal | null = null;
@@ -89,23 +108,23 @@ export function activate(context: vscode.ExtensionContext) {
           terminal.sendText(fileRef, false);
         }, pasteDelay);
 
-        vscode.window.showInformationMessage(
+        showNotificationIfEnabled(
           "New Forge session started. File reference will be pasted automatically."
         );
       } else {
-        vscode.window.showInformationMessage(
+        showNotificationIfEnabled(
           "New Forge session started. File reference copied to clipboard."
         );
       }
     } else {
-      vscode.window.showInformationMessage("New Forge session started.");
+      showNotificationIfEnabled("New Forge session started.");
     }
   }
 
   async function copyFileReference() {
     const fileRef = getFileReference();
     if (!fileRef) {
-      vscode.window.showWarningMessage("No file found.");
+      showNotificationIfEnabled("No file found.", 'warning');
       return;
     }
 
@@ -117,7 +136,7 @@ export function activate(context: vscode.ExtensionContext) {
       .get<string>("openTerminal", "once");
 
     if (openTerminal === "never") {
-      vscode.window.showInformationMessage(
+      showNotificationIfEnabled(
         "File reference copied to clipboard."
       );
       return;
@@ -152,7 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Scenario 1: Multiple Forge terminals exist
     // Show clipboard message and let user manually paste to avoid ambiguity
     if (hasMultipleForgeTerminals) {
-      vscode.window.showInformationMessage(CLIPBOARD_MESSAGE);
+      showNotificationIfEnabled(CLIPBOARD_MESSAGE);
       return;
     }
 
@@ -164,7 +183,7 @@ export function activate(context: vscode.ExtensionContext) {
       totalForgeProcesses > forgeTerminals.length;
 
     if (hasBothExternalAndInternal) {
-      vscode.window.showInformationMessage(CLIPBOARD_MESSAGE);
+      showNotificationIfEnabled(CLIPBOARD_MESSAGE);
       return;
     }
 
@@ -179,7 +198,7 @@ export function activate(context: vscode.ExtensionContext) {
       if (autoPaste) {
         targetForgeTerminal.sendText(fileRef, false);
       } else {
-        vscode.window.showInformationMessage(
+        showNotificationIfEnabled(
           "File reference copied to clipboard."
         );
       }
@@ -197,20 +216,26 @@ export function activate(context: vscode.ExtensionContext) {
     // Scenario 5: Forge running externally only
     // Prompt user to either continue externally or launch inside VS Code
     if (externalRunning && !targetForgeTerminal) {
-      const action = await vscode.window.showInformationMessage(
-        `Forge is running in an external terminal. File reference copied - paste it there to continue.`,
-        {
-          modal: false,
-          detail:
-            "You can continue in the external terminal or launch Forge inside VS Code.",
-        },
-        "Launch Forge Inside VSCode"
-      );
+      const showNotifications = vscode.workspace
+        .getConfiguration("forge")
+        .get<boolean>("showNotifications", true);
 
-      if (action === "Launch Forge Inside VSCode") {
-        const terminal = createRightSideTerminal();
-        startForgeWithAutoPaste(terminal, fileRef);
-        vscode.window.showInformationMessage(FORGE_STARTING_MESSAGE);
+      if (showNotifications) {
+        const action = await vscode.window.showInformationMessage(
+          `Forge is running in an external terminal. File reference copied - paste it there to continue.`,
+          {
+            modal: false,
+            detail:
+              "You can continue in the external terminal or launch Forge inside VS Code.",
+          },
+          "Launch Forge Inside VSCode"
+        );
+
+        if (action === "Launch Forge Inside VSCode") {
+          const terminal = createRightSideTerminal();
+          startForgeWithAutoPaste(terminal, fileRef);
+          showNotificationIfEnabled(FORGE_STARTING_MESSAGE);
+        }
       }
       return;
     }
@@ -371,7 +396,7 @@ export function activate(context: vscode.ExtensionContext) {
   async function copyFileReferenceWithFormat(format: "absolute" | "relative") {
     const fileRef = getFileReference(format);
     if (!fileRef) {
-      vscode.window.showWarningMessage("No file found.");
+      showNotificationIfEnabled("No file found.", 'warning');
       return;
     }
 
@@ -379,7 +404,7 @@ export function activate(context: vscode.ExtensionContext) {
     await vscode.env.clipboard.writeText(fileRef);
 
     const formatLabel = format === "absolute" ? "absolute" : "relative";
-    vscode.window.showInformationMessage(
+    showNotificationIfEnabled(
       `File reference (${formatLabel} path) copied to clipboard.`
     );
   }

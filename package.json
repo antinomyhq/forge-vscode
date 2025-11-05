@@ -2,7 +2,7 @@
   "name": "forge-vscode",
   "displayName": "Forge Code",
   "description": "AI-enabled pair programmer for Claude, GPT, and 300+ models. Seamlessly integrate Forge AI assistant into your VS Code workflow.",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "icon": "images/icon.png",
   "publisher": "ForgeCode",
   "author": "Antinomy <support@antinomy.ai>",
@@ -122,6 +122,11 @@
           ],
           "default": "absolute",
           "description": "File path format when copying references (absolute or relative)"
+        },
+        "forge.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show informational notifications when copying file references or starting Forge sessions"
         }
       }
     },
