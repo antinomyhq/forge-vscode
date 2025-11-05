@@ -122,6 +122,11 @@
           ],
           "default": "absolute",
           "description": "File path format when copying references (absolute or relative)"
+        },
+        "forge.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show informational notifications when copying file references or starting Forge sessions"
         }
       }
     },
