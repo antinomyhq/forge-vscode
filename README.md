@@ -113,7 +113,10 @@ Access settings via File → Preferences → Settings → Extensions → Forge
 - **forge.pathFormat** (default: `absolute`): Path format for file references
   - `absolute` - Use absolute file paths (e.g., `/Users/name/project/src/file.ts`)
   - `relative` - Use workspace-relative paths (e.g., `src/file.ts`)
-- **forge.showNotifications** (default: `true`): Show informational notifications when copying file references or starting Forge sessions
+- **forge.notifications**: Control which popup notifications to show
+  - `info` (default: `true`) - Show informational notifications
+  - `warning` (default: `true`) - Show warning notifications
+  - `error` (default: `true`) - Show error notifications
 
 ## Examples
 

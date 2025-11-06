@@ -123,10 +123,29 @@
           "default": "absolute",
           "description": "File path format when copying references (absolute or relative)"
         },
-        "forge.showNotifications": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show informational notifications when copying file references or starting Forge sessions"
+        "forge.notifications": {
+          "type": "object",
+          "description": "Control which popup notifications to show.",
+          "default": {
+            "info": true,
+            "warning": true,
+            "error": true
+          },
+          "properties": {
+            "info": {
+              "type": "boolean",
+              "description": "Show informational notifications"
+            },
+            "warning": {
+              "type": "boolean",
+              "description": "Show warning notifications"
+            },
+            "error": {
+              "type": "boolean",
+              "description": "Show error notifications"
+            }
+          },
+          "additionalProperties": false
         }
       }
     },
