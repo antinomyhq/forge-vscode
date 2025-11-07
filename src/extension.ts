@@ -10,16 +10,17 @@ const FORGE_STARTING_MESSAGE =
 // This method is called when your extension is deactivated
 export function deactivate() {}
 
-function showNotificationIfEnabled(message: string, type: 'info' | 'warning' | 'error' = 'info', ...items: string[]) {
-  const showNotifications = vscode.workspace
+function showNotificationIfEnabled(message: string, messageType: 'info' | 'warning' | 'error' = 'info', ...items: string[]) {
+  const notifications = vscode.workspace
     .getConfiguration("forge")
-    .get<boolean>("showNotifications", true);
+    .get<{info: boolean, warning: boolean, error: boolean}>("notifications");
 
-  if (!showNotifications) {
+  // Check if this specific notification type is enabled
+  if (!notifications?.[messageType]) {
     return Promise.resolve(undefined);
   }
 
-  switch (type) {
+  switch (messageType) {
     case 'warning':
       return vscode.window.showWarningMessage(message, ...items);
     case 'error':
@@ -28,6 +29,18 @@ function showNotificationIfEnabled(message: string, type: 'info' | 'warning' | '
       return vscode.window.showInformationMessage(message, ...items);
   }
 }
+
+function showCopyReferenceInActivityBar(message: string) {
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  statusBarItem.text = `$(check) ${message}`;
+  statusBarItem.show();
+
+  setTimeout(() => {
+    statusBarItem.dispose();
+  }, 3000);
+}
+
+
 
 export function activate(context: vscode.ExtensionContext) {
   // Track the last focused Forge terminal
@@ -109,15 +122,23 @@ export function activate(context: vscode.ExtensionContext) {
         }, pasteDelay);
 
         showNotificationIfEnabled(
-          "New Forge session started. File reference will be pasted automatically."
+          "New Forge session started.",
+          'info'
+        );
+        showCopyReferenceInActivityBar(
+          "File reference will be pasted automatically."
         );
       } else {
         showNotificationIfEnabled(
-          "New Forge session started. File reference copied to clipboard."
+          "New Forge session started.",
+          'info'
+        );
+        showCopyReferenceInActivityBar(
+          "File reference copied to clipboard."
         );
       }
     } else {
-      showNotificationIfEnabled("New Forge session started.");
+      showNotificationIfEnabled("New Forge session started.", 'info');
     }
   }
 
@@ -136,7 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
       .get<string>("openTerminal", "once");
 
     if (openTerminal === "never") {
-      showNotificationIfEnabled(
+      showCopyReferenceInActivityBar(
         "File reference copied to clipboard."
       );
       return;
@@ -171,7 +192,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Scenario 1: Multiple Forge terminals exist
     // Show clipboard message and let user manually paste to avoid ambiguity
     if (hasMultipleForgeTerminals) {
-      showNotificationIfEnabled(CLIPBOARD_MESSAGE);
+      showCopyReferenceInActivityBar(CLIPBOARD_MESSAGE);
       return;
     }
 
@@ -183,7 +204,7 @@ export function activate(context: vscode.ExtensionContext) {
       totalForgeProcesses > forgeTerminals.length;
 
     if (hasBothExternalAndInternal) {
-      showNotificationIfEnabled(CLIPBOARD_MESSAGE);
+      showCopyReferenceInActivityBar(CLIPBOARD_MESSAGE);
       return;
     }
 
@@ -197,8 +218,11 @@ export function activate(context: vscode.ExtensionContext) {
 
       if (autoPaste) {
         targetForgeTerminal.sendText(fileRef, false);
+        showCopyReferenceInActivityBar(
+          "File reference pasted to terminal."
+        );
       } else {
-        showNotificationIfEnabled(
+        showCopyReferenceInActivityBar(
           "File reference copied to clipboard."
         );
       }
@@ -210,17 +234,25 @@ export function activate(context: vscode.ExtensionContext) {
     if (!externalRunning && forgeTerminals.length === 0) {
       const terminal = createRightSideTerminal();
       startForgeWithAutoPaste(terminal, fileRef);
+      showNotificationIfEnabled("New Forge terminal created.", 'info');
+      showCopyReferenceInActivityBar(
+        "File reference will be pasted automatically."
+      );
       return;
     }
 
     // Scenario 5: Forge running externally only
     // Prompt user to either continue externally or launch inside VS Code
     if (externalRunning && !targetForgeTerminal) {
-      const showNotifications = vscode.workspace
-        .getConfiguration("forge")
-        .get<boolean>("showNotifications", true);
+      showCopyReferenceInActivityBar(
+        "File reference copied to clipboard. Paste in external Forge terminal."
+      );
 
-      if (showNotifications) {
+      const notificationConfig = vscode.workspace
+        .getConfiguration("forge")
+        .get<{info: boolean, warning: boolean, error: boolean}>("notifications");
+
+      if (notificationConfig?.info) {
         const action = await vscode.window.showInformationMessage(
           `Forge is running in an external terminal. File reference copied - paste it there to continue.`,
           {
@@ -234,7 +266,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (action === "Launch Forge Inside VSCode") {
           const terminal = createRightSideTerminal();
           startForgeWithAutoPaste(terminal, fileRef);
-          showNotificationIfEnabled(FORGE_STARTING_MESSAGE);
+          showNotificationIfEnabled(FORGE_STARTING_MESSAGE, 'info');
         }
       }
       return;
@@ -404,7 +436,7 @@ export function activate(context: vscode.ExtensionContext) {
     await vscode.env.clipboard.writeText(fileRef);
 
     const formatLabel = format === "absolute" ? "absolute" : "relative";
-    showNotificationIfEnabled(
+    showCopyReferenceInActivityBar(
       `File reference (${formatLabel} path) copied to clipboard.`
     );
   }
