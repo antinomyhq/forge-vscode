@@ -8,7 +8,17 @@ const FORGE_STARTING_MESSAGE =
   "Forge is starting... File reference copied to clipboard. Paste it when ready.";
 
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  // Clean up status bar item
+  if (copyStatusBarItem) {
+    copyStatusBarItem.dispose();
+    copyStatusBarItem = null;
+  }
+  if (copyTimeout) {
+    clearTimeout(copyTimeout);
+    copyTimeout = null;
+  }
+}
 
 function showNotificationIfEnabled(message: string, messageType: 'info' | 'warning' | 'error' = 'info', ...items: string[]) {
   const notifications = vscode.workspace
@@ -30,13 +40,34 @@ function showNotificationIfEnabled(message: string, messageType: 'info' | 'warni
   }
 }
 
-function showCopyReferenceInActivityBar(message: string) {
-  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-  statusBarItem.text = `$(forge-logo) ${message}`;
-  statusBarItem.show();
+// Reusable status bar item and counter for copy notifications
+let copyStatusBarItem: vscode.StatusBarItem | null = null;
+let copyCount = 0;
+let copyTimeout: NodeJS.Timeout | null = null;
 
-  setTimeout(() => {
-    statusBarItem.dispose();
+function showCopyReferenceInActivityBar(message: string) {
+  copyCount++;
+
+  // Create status bar item if it doesn't exist
+  if (!copyStatusBarItem) {
+    copyStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  }
+
+  copyStatusBarItem.text = copyCount > 1
+    ? `$(forge-logo) ${message} (${copyCount})`
+    : `$(forge-logo) ${message}`;
+  copyStatusBarItem.show();
+
+  // Clear existing timeout if any
+  if (copyTimeout) {
+    clearTimeout(copyTimeout);
+  }
+
+  // Set new timeout to hide and reset
+  copyTimeout = setTimeout(() => {
+    copyStatusBarItem?.hide();
+    copyCount = 0;
+    copyTimeout = null;
   }, 3000);
 }
 
@@ -134,7 +165,7 @@ export function activate(context: vscode.ExtensionContext) {
           'info'
         );
         showCopyReferenceInActivityBar(
-          "File reference copied to clipboard."
+          "File reference copied to clipboard"
         );
       }
     } else {
@@ -219,11 +250,11 @@ export function activate(context: vscode.ExtensionContext) {
       if (autoPaste) {
         targetForgeTerminal.sendText(fileRef, false);
         showCopyReferenceInActivityBar(
-          "File reference pasted to terminal."
+          "File reference pasted to terminal"
         );
       } else {
         showCopyReferenceInActivityBar(
-          "File reference copied to clipboard."
+          "File reference copied to clipboard"
         );
       }
       return;
@@ -236,7 +267,7 @@ export function activate(context: vscode.ExtensionContext) {
       startForgeWithAutoPaste(terminal, fileRef);
       showNotificationIfEnabled("New Forge terminal created.", 'info');
       showCopyReferenceInActivityBar(
-        "File reference will be pasted automatically."
+        "File reference will be pasted automatically"
       );
       return;
     }
@@ -437,7 +468,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const formatLabel = format === "absolute" ? "absolute" : "relative";
     showCopyReferenceInActivityBar(
-      `File reference (${formatLabel} path) copied to clipboard.`
+      `File reference (${formatLabel} path) copied to clipboard`
     );
   }
 }
