@@ -32,7 +32,7 @@ function showNotificationIfEnabled(message: string, messageType: 'info' | 'warni
 
 function showCopyReferenceInActivityBar(message: string) {
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-  statusBarItem.text = `$(check) ${message}`;
+  statusBarItem.text = `$(forge-logo) ${message}`;
   statusBarItem.show();
 
   setTimeout(() => {

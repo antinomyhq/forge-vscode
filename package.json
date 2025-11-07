@@ -33,6 +33,15 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "icons": {
+      "forge-logo": {
+        "description": "Forge logo icon",
+        "default": {
+          "fontPath": "./icomoon/icomoon.woff",
+          "fontCharacter": "\\e902"
+        }
+      }
+    },
     "commands": [
       {
         "command": "forgecode.startNewForgeSession",
