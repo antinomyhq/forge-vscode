@@ -119,7 +119,7 @@
           "default": "once",
           "description": "Open terminal when copying file references"
         },
-        "forge.pathFormat": {
+        "forge.fileReferenceFormat": {
           "type": "string",
           "enum": [
             "absolute",
@@ -130,7 +130,7 @@
             "Use workspace-relative paths (e.g., src/file.ts)"
           ],
           "default": "absolute",
-          "description": "File path format when copying references (absolute or relative)"
+          "description": "File path format when copying file references (absolute or relative)"
         },
         "forge.notifications": {
           "type": "object",

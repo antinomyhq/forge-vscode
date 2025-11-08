@@ -416,7 +416,7 @@ export function activate(context: vscode.ExtensionContext) {
     // If no format specified, use user's preference from settings
     const pathFormat = format ?? vscode.workspace
       .getConfiguration("forge")
-      .get<string>("pathFormat", "absolute");
+      .get<string>("fileReferenceFormat", "absolute");
 
     if (pathFormat === "relative") {
       return getWorkspaceRelativePath(fileUri);
