@@ -68,7 +68,7 @@ function showCopyReferenceInActivityBar(message: string) {
     copyStatusBarItem?.hide();
     copyCount = 0;
     copyTimeout = null;
-  }, 3000);
+  }, 5000);
 }
 
 
