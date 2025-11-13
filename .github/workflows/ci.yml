@@ -2,41 +2,168 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, test-main]  # Added test-main for testing
+    tags:
+      - 'v*'
   pull_request:
-    branches: [ main ]
+    branches: [main, test-main]  # Added test-main for testing
+    types: [opened, reopened, synchronize]
+
+# Cancel in-progress runs when a new workflow with the same ref is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  build:
+  # ============================================================================
+  # PARALLEL JOBS - Run on both PRs and main branch pushes
+  # ============================================================================
+
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [20.x]
-    
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run ESLint
-      run: npm run lint
-    
-    - name: Type check
-      run: npm run check-types
-    
-    - name: Run tests
-      run: xvfb-run -a npm test
-      if: runner.os == 'Linux'
-    
-    - name: Build extension
-      run: npm run package
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run check-types
+
+      - name: Run tests
+        run: xvfb-run -a npm test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension
+        run: npm run package
+
+  pr_title_check:
+    name: PR Title Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Validate PR Title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            feature
+            fix
+            bug
+            bugfix
+            docs
+            documentation
+            chore
+            refactor
+            test
+            ci
+            enhancement
+            major
+            breaking
+            minor
+            patch
+          requireScope: false
+
+  release_drafter:
+    name: Draft Release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test-main')
+
+    steps:
+      - name: Update Release Draft
+        uses: release-drafter/release-drafter@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # RELEASE JOB - Only runs on version tags (v*) after all checks pass
+  # ============================================================================
+
+  release:
+    name: Publish to Marketplace
+    runs-on: ubuntu-latest
+    needs: [lint, test, build]
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Package Extension
+        run: npm run package
+
+      - name: Create VSIX
+        run: npx @vscode/vsce package
+
+      - name: Publish to VS Code Marketplace
+        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Upload VSIX to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '*.vsix'
+          generate_release_notes: true
 
