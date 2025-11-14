@@ -1,8 +1,6 @@
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 
-version-template: '0.9.5'
-
 categories:
   - title: '🚀 Features'
     labels:
