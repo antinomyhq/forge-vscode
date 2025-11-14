@@ -87,6 +87,20 @@ suite('Integration Tests', () => {
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
+    test('Copy file reference and paste command should execute', async () => {
+        const extension = vscode.extensions.getExtension('ForgeCode.forge-vscode');
+        if (extension && !extension.isActive) {
+            await extension.activate();
+        }
+        
+        try {
+            await vscode.commands.executeCommand('forgecode.copyFileReferenceAndPaste');
+            assert.ok(true, 'copyFileReferenceAndPaste command should execute without errors');
+        } catch (error: unknown) {
+            assert.fail(`copyFileReferenceAndPaste command should not throw: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    });
+
     test('Should handle terminal creation', async () => {
         // Test that terminal creation doesn't throw errors
         try {

@@ -12,25 +12,18 @@ export function getFileReference(format?: "absolute" | "relative"): string | und
 
   const filePath = editor.document.uri.fsPath;
   const selection = editor.selection;
-
-  if (selection.isEmpty) {
-    // No selection: return file reference with line number
-    const lineNumber = selection.anchor.line + 1; // Convert to 1-based indexing
-    const fileName = path.basename(filePath);
-    
-    if (format === "relative") {
-      const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
-      if (workspaceFolder) {
-        const relativePath = path.relative(workspaceFolder.uri.fsPath, filePath);
-        return `${relativePath}:${lineNumber}`;
-      }
+  const lineNumber = selection.anchor.line + 1; // Convert to 1-based indexing
+  const fileName = path.basename(filePath);
+  
+  if (format === "relative") {
+    const workspaceFolder = vscode.workspace.getWorkspaceFolder(editor.document.uri);
+    if (workspaceFolder) {
+      const relativePath = path.relative(workspaceFolder.uri.fsPath, filePath);
+      return `${relativePath}:${lineNumber}`;
     }
-    
-    return `${fileName}:${lineNumber}`;
-  } else {
-    // Has selection: return selected text
-    return editor.document.getText(selection);
   }
+  
+  return `${fileName}:${lineNumber}`;
 }
 
 /**
