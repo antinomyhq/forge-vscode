@@ -18,6 +18,12 @@ suite('Integration Tests', () => {
         assert.ok(copyCommandExists, 'copyFileReference command should be registered');
     });
 
+    test('Copy file reference and paste command should be registered', async () => {
+        const commands = await vscode.commands.getCommands();
+        const copyAndPasteCommandExists = commands.includes('forgecode.copyFileReferenceAndPaste');
+        assert.ok(copyAndPasteCommandExists, 'copyFileReferenceAndPaste command should be registered');
+    });
+
     test('Start Forge session command should be registered', async () => {
         const commands = await vscode.commands.getCommands();
         const sessionCommandExists = commands.includes('forgecode.startNewForgeSession');
