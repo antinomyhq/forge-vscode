@@ -2,11 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main, test-main]  # Added test-main for testing
+    branches: [main]
     tags:
       - 'v*'
   pull_request:
-    branches: [main, test-main]  # Added test-main for testing
+    branches: [main]
     types: [opened, reopened, synchronize, edited]
 
 # Cancel in-progress runs when a new workflow with the same ref is triggered
@@ -119,7 +119,7 @@ jobs:
   release_drafter:
     name: Draft Release
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/test-main')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Update Release Draft
