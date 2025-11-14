@@ -54,7 +54,7 @@ npm install -g forgecode
 
 ### Keyboard Shortcuts
 
-- **CTRL+U**: Copy file reference to clipboard (uses `forge.pathFormat` setting)
+- **CTRL+U**: Copy file reference to clipboard (uses `forge.fileReferenceFormat` setting)
 
 ### Context Menu Commands
 
@@ -63,7 +63,7 @@ Right-click in any editor to access:
 - **Copy Absolute Path**: Always copy with absolute path, regardless of settings
 - **Copy Relative Path**: Always copy with workspace-relative path, regardless of settings
 
-These commands are available in the editor context menu (right-click) and provide direct control over the path format, independent of the `forge.pathFormat` setting.
+These commands are available in the editor context menu (right-click) and provide direct control over the path format, independent of the `forge.fileReferenceFormat` setting.
 
 ### File Reference Format
 
@@ -85,7 +85,7 @@ The extension generates references in the exact format that Forge understands:
 
 1. **Select code** in any file
 2. **Press CTRL+U**
-3. **File reference is copied** to clipboard (format based on `forge.pathFormat` setting)
+3. **File reference is copied** to clipboard (format based on `forge.fileReferenceFormat` setting)
 4. **Paste in any terminal** where Forge is running
 
 #### Method 2: Context Menu (Direct Control)
@@ -110,7 +110,7 @@ Access settings via File → Preferences → Settings → Extensions → Forge
 - **forge.openTerminal** (default: `once`): Open terminal when copying file references
   - `once` - Open terminal once and reuse it for subsequent operations
   - `never` - Never open terminal, only copy file reference to clipboard
-- **forge.pathFormat** (default: `absolute`): Path format for file references
+- **forge.fileReferenceFormat** (default: `absolute`): Path format for file references
   - `absolute` - Use absolute file paths (e.g., `/Users/name/project/src/file.ts`)
   - `relative` - Use workspace-relative paths (e.g., `src/file.ts`)
 - **forge.notifications**: Control which popup notifications to show
@@ -133,7 +133,7 @@ Access settings via File → Preferences → Settings → Extensions → Forge
 # Result: @[/Users/name/project/src/file.ts] copied to clipboard
 ```
 
-### With Relative Paths (forge.pathFormat: "relative")
+### With Relative Paths (forge.fileReferenceFormat: "relative")
 
 ```bash
 # Select lines 10-20 in Button.tsx and press CTRL+U
