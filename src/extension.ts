@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import {
 	TERMINAL_NAME,
-	DEFAULT_STARTUP_DELAY,
 	CLIPBOARD_MESSAGE,
 	FORGE_STARTING_MESSAGE,
 	STATUS_BAR_HIDE_DELAY,
@@ -10,6 +9,9 @@ import {
 	FILE_REFERENCE_WILL_BE_PASTED_MESSAGE,
 	FILE_REFERENCE_COPIED_MESSAGE,
 } from "./constants";
+import { ConfigService } from "./services/configService";
+import { ProcessService } from "./services/processService";
+import { FileReferenceService } from "./services/fileReferenceService";
 
 // This method is called when your extension is deactivated
 export function deactivate() {
@@ -24,6 +26,9 @@ export function deactivate() {
   }
 }
 
+// Note: This function needs access to configService, so it will be moved inside activate()
+// or we need to pass configService as a parameter. For now, keeping original implementation
+// to avoid breaking changes. Will be refactored in Phase 2 (UI Layer).
 function showNotificationIfEnabled(message: string, messageType: 'info' | 'warning' | 'error' = 'info', ...items: string[]) {
   const notifications = vscode.workspace
     .getConfiguration("forge")
@@ -78,6 +83,11 @@ function showCopyReferenceInActivityBar(message: string) {
 
 
 export function activate(context: vscode.ExtensionContext) {
+  // Initialize services
+  const configService = new ConfigService();
+  const processService = new ProcessService();
+  const fileReferenceService = new FileReferenceService(configService);
+
   // Track the last focused Forge terminal
   let lastFocusedForgeTerminal: vscode.Terminal | null = null;
 
@@ -139,19 +149,15 @@ export function activate(context: vscode.ExtensionContext) {
     terminal.sendText("forge", true);
 
     // Copy current file reference to clipboard
-    const fileRef = getFileReference();
+    const fileRef = fileReferenceService.getFileReference();
     if (fileRef) {
       await vscode.env.clipboard.writeText(fileRef);
 
       // Check if auto-paste is enabled
-		  const autoPaste = vscode.workspace
-		    .getConfiguration("forge")
-		    .get<boolean>("autoPaste", true);
+		  const autoPaste = configService.getAutoPasteEnabled();
 
 	    	  if (autoPaste) {
-	    	    const pasteDelay = vscode.workspace
-	    	      .getConfiguration("forge")
-	    	      .get<number>("pasteDelay", DEFAULT_STARTUP_DELAY);
+	    	    const pasteDelay = configService.getPasteDelay();
 	    	    setTimeout(() => {
 	    	      terminal.sendText(fileRef, false);
 	    	    }, pasteDelay);
@@ -178,7 +184,7 @@ export function activate(context: vscode.ExtensionContext) {
   }
 
   async function copyFileReference() {
-    const fileRef = getFileReference();
+    const fileRef = fileReferenceService.getFileReference();
 	    if (!fileRef) {
 	      showNotificationIfEnabled(NO_FILE_FOUND_MESSAGE, 'warning');
 	      return;
@@ -187,9 +193,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Always copy to clipboard first
     await vscode.env.clipboard.writeText(fileRef);
 
-    const openTerminal = vscode.workspace
-      .getConfiguration("forge")
-      .get<string>("openTerminal", "once");
+    const openTerminal = configService.getOpenTerminalMode();
 
 	      if (openTerminal === "never") {
 	      	showCopyReferenceInActivityBar(
@@ -200,8 +204,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Once mode (default): Open terminal once and reuse it, copy when ambiguous
     // Check if Forge is running externally and get process count
-    const externalRunning = await checkExternalForgeProcess();
-    const totalForgeProcesses = await checkForgeProcessCount();
+    const externalRunning = await processService.checkExternalForgeProcess();
+    const totalForgeProcesses = await processService.checkForgeProcessCount();
 
     // Find all Forge terminals in VS Code
     const forgeTerminals = vscode.window.terminals.filter(isForgeTerminal);
@@ -247,9 +251,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (targetForgeTerminal && forgeTerminals.length === 1) {
       targetForgeTerminal.show();
 
-      const autoPaste = vscode.workspace
-        .getConfiguration("forge")
-        .get<boolean>("autoPaste", true);
+      const autoPaste = configService.getAutoPasteEnabled();
 
 	      if (autoPaste) {
 	        targetForgeTerminal.sendText(fileRef, false);
@@ -283,9 +285,7 @@ export function activate(context: vscode.ExtensionContext) {
         "File reference copied to clipboard. Paste in external Forge terminal."
       );
 
-      const notificationConfig = vscode.workspace
-        .getConfiguration("forge")
-        .get<{info: boolean, warning: boolean, error: boolean}>("notifications");
+      const notificationConfig = configService.getNotificationConfig();
 
       if (notificationConfig?.info) {
         const action = await vscode.window.showInformationMessage(
@@ -335,14 +335,10 @@ export function activate(context: vscode.ExtensionContext) {
     terminal.show();
     terminal.sendText("forge", true);
 
-    const autoPaste = vscode.workspace
-      .getConfiguration("forge")
-      .get<boolean>("autoPaste", true);
+    const autoPaste = configService.getAutoPasteEnabled();
 
     if (autoPaste) {
-      const pasteDelay = vscode.workspace
-        .getConfiguration("forge")
-        .get<number>("pasteDelay", DEFAULT_STARTUP_DELAY);
+      const pasteDelay = configService.getPasteDelay();
       setTimeout(() => {
         terminal.sendText(fileRef, false);
       }, pasteDelay);
@@ -350,118 +346,18 @@ export function activate(context: vscode.ExtensionContext) {
     // When disabled: only start Forge, no auto-paste
   }
 
-  async function checkExternalForgeProcess(): Promise<boolean> {
-    return new Promise((resolve) => {
-      const { exec } = require("child_process");
-      let processCheckCmd: string;
-      if (process.platform === "win32") {
-        processCheckCmd =
-          'tasklist /FI "IMAGENAME eq forge.exe" /FO CSV | find /C "forge.exe"';
-      } else {
-        processCheckCmd = 'pgrep -f "forge" | wc -l';
-      }
-      exec(processCheckCmd, (error: any, stdout: string) => {
-        if (error) {
-          resolve(false);
-          return;
-        }
-        const count = parseInt((stdout || "0").toString().trim(), 10);
-        resolve(count > 0);
-      });
-    });
-  }
+  // Process detection functions moved to services/processService.ts
 
-  async function checkForgeProcessCount(): Promise<number> {
-    return new Promise((resolve) => {
-      const { exec } = require("child_process");
-      let processCheckCmd: string;
-      if (process.platform === "win32") {
-        processCheckCmd =
-          'tasklist /FI "IMAGENAME eq forge.exe" /FO CSV | find /C "forge.exe"';
-      } else {
-        processCheckCmd = 'pgrep -f "forge" | wc -l';
-      }
-      exec(processCheckCmd, (error: any, stdout: string) => {
-        if (error) {
-          resolve(0);
-          return;
-        }
-        const count = parseInt((stdout || "0").toString().trim(), 10);
-        resolve(count);
-      });
-    });
-  }
-
-  /**
-   * Get workspace-relative path for a file URI
-   * Falls back to absolute path if file is not in any workspace folder
-   */
-  function getWorkspaceRelativePath(fileUri: vscode.Uri): string {
-    const workspaceFolder = vscode.workspace.getWorkspaceFolder(fileUri);
-
-    if (workspaceFolder) {
-      // Get relative path from workspace root
-      const relativePath = vscode.workspace.asRelativePath(fileUri, false);
-      return relativePath;
-    }
-
-    // Fallback to absolute path if not in workspace
-    return fileUri.fsPath;
-  }
-
-  /**
-   * Get the file path with a specific format (absolute or relative)
-   * If format is not specified, uses the user's preference from settings
-   */
-  function getFilePathWithFormat(
-    fileUri: vscode.Uri,
-    format?: "absolute" | "relative"
-  ): string {
-    // If no format specified, use user's preference from settings
-    const pathFormat = format ?? vscode.workspace
-      .getConfiguration("forge")
-      .get<string>("fileReferenceFormat", "absolute");
-
-    if (pathFormat === "relative") {
-      return getWorkspaceRelativePath(fileUri);
-    }
-
-    // Default to absolute path
-    return fileUri.fsPath;
-  }
-
-  function getFileReference(format?: "absolute" | "relative"): string | undefined {
-    const activeEditor = vscode.window.activeTextEditor;
-    if (!activeEditor) {
-      return;
-    }
-
-    const document = activeEditor.document;
-
-    // Get the file path (with optional format override)
-    const filePath = getFilePathWithFormat(document.uri, format);
-
-    const selection = activeEditor.selection;
-
-    // if no selection, return the file path in formatted form
-    if (selection.isEmpty) {
-      return `@[${filePath}]`;
-    }
-
-    // Get line numbers (1-based)
-    const startLine = activeEditor.selection.start.line + 1;
-    const endLine = activeEditor.selection.end.line + 1;
-
-    // Always return file reference without symbol name
-    return `@[${filePath}:${startLine}:${endLine}]`;
-  }
+  // Path utilities and file reference generation moved to:
+  // - utils/pathUtils.ts
+  // - services/fileReferenceService.ts
 
   /**
    * Copy file reference with a specific path format (for context menu commands)
    */
   // Context menu commands - only copy to clipboard (no auto-paste)
   async function copyFileReferenceWithFormat(format: "absolute" | "relative") {
-    const fileRef = getFileReference(format);
+    const fileRef = fileReferenceService.getFileReference(format);
     if (!fileRef) {
 	      showNotificationIfEnabled(NO_FILE_FOUND_MESSAGE, 'warning');
       return;
