@@ -1,11 +1,70 @@
-.vscode/**
-.vscode-test/**
-src/**
+# Source files
+src/
+*.ts
+*.map
+
+# Build configuration
+esbuild.js
+tsconfig.json
+eslint.config.mjs
+webpack.config.js
+rollup.config.js
+
+# Test files
+**/test/
+**/*.test.ts
+**/*.spec.ts
+test/
+tests/
+
+# Development artifacts
+node_modules/
+.vscode-test/
+out/
+coverage/
+.nyc_output/
+*.log
+
+# Configuration files
+forge.yaml
+.env
+.env.local
+.env.*.local
+
+# Version control
+.git/
 .gitignore
+.gitattributes
+
+# IDE files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation files (keep README and CHANGELOG)
+docs/
+CONTRIBUTING.md
+*.md
+!README.md
+!CHANGELOG.md
+
+# Scripts
+scripts/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Legacy exclusions (keep existing ones)
+.vscode/**
 .yarnrc
 vsc-extension-quickstart.md
-**/tsconfig.json
 **/.eslintrc.json
-**/*.map
-**/*.ts
-node_modules/**

@@ -2,6 +2,21 @@
 
 All notable changes to the Forge VS Code extension.
 
+## [0.9.7] - 2025-11-14
+
+### Security & Packaging
+- Added `.vscodeignore` to prevent packaging source files and build artifacts
+- Reduced extension package size by excluding unnecessary files
+- Added explicit Apache-2.0 license field to package.json
+
+### Process Automation
+- Transitioning to automated changelog management via Release Drafter
+- Future changelogs will be available on GitHub Releases page
+
+### Note
+- This version prepares the extension for enhanced security and maintainability
+- Users are directed to GitHub Releases for detailed changelog information going forward
+
 ## [0.0.1] - 2025-01-08
 
 ### Added
