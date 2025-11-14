@@ -1,11 +1,15 @@
 import * as vscode from "vscode";
-
-const TERMINAL_NAME = "forge";
-const DEFAULT_STARTUP_DELAY = 5000;
-const CLIPBOARD_MESSAGE =
-  "File reference copied to clipboard. Paste it in any forge terminal when ready.";
-const FORGE_STARTING_MESSAGE =
-  "Forge is starting... File reference copied to clipboard. Paste it when ready.";
+import {
+	TERMINAL_NAME,
+	DEFAULT_STARTUP_DELAY,
+	CLIPBOARD_MESSAGE,
+	FORGE_STARTING_MESSAGE,
+	STATUS_BAR_HIDE_DELAY,
+	NO_FILE_FOUND_MESSAGE,
+	NEW_FORGE_SESSION_MESSAGE,
+	FILE_REFERENCE_WILL_BE_PASTED_MESSAGE,
+	FILE_REFERENCE_COPIED_MESSAGE,
+} from "./constants";
 
 // This method is called when your extension is deactivated
 export function deactivate() {
@@ -63,12 +67,12 @@ function showCopyReferenceInActivityBar(message: string) {
     clearTimeout(copyTimeout);
   }
 
-  // Set new timeout to hide and reset
-  copyTimeout = setTimeout(() => {
-    copyStatusBarItem?.hide();
-    copyCount = 0;
-    copyTimeout = null;
-  }, 5000);
+		// Set new timeout to hide and reset
+		copyTimeout = setTimeout(() => {
+			copyStatusBarItem?.hide();
+			copyCount = 0;
+			copyTimeout = null;
+		}, STATUS_BAR_HIDE_DELAY);
 }
 
 
@@ -140,45 +144,45 @@ export function activate(context: vscode.ExtensionContext) {
       await vscode.env.clipboard.writeText(fileRef);
 
       // Check if auto-paste is enabled
-      const autoPaste = vscode.workspace
-        .getConfiguration("forge")
-        .get<boolean>("autoPaste", true);
+		  const autoPaste = vscode.workspace
+		    .getConfiguration("forge")
+		    .get<boolean>("autoPaste", true);
 
-      if (autoPaste) {
-        const pasteDelay = vscode.workspace
-          .getConfiguration("forge")
-          .get<number>("pasteDelay", 5000);
-        setTimeout(() => {
-          terminal.sendText(fileRef, false);
-        }, pasteDelay);
-
-        showNotificationIfEnabled(
-          "New Forge session started.",
-          'info'
-        );
-        showCopyReferenceInActivityBar(
-          "File reference will be pasted automatically."
-        );
-      } else {
-        showNotificationIfEnabled(
-          "New Forge session started.",
-          'info'
-        );
-        showCopyReferenceInActivityBar(
-          "File reference copied to clipboard"
-        );
-      }
-    } else {
-      showNotificationIfEnabled("New Forge session started.", 'info');
-    }
+	    	  if (autoPaste) {
+	    	    const pasteDelay = vscode.workspace
+	    	      .getConfiguration("forge")
+	    	      .get<number>("pasteDelay", DEFAULT_STARTUP_DELAY);
+	    	    setTimeout(() => {
+	    	      terminal.sendText(fileRef, false);
+	    	    }, pasteDelay);
+	    	
+	    	    showNotificationIfEnabled(
+	    	      NEW_FORGE_SESSION_MESSAGE,
+	    	      'info'
+	    	    );
+	    	    showCopyReferenceInActivityBar(
+	    	      FILE_REFERENCE_WILL_BE_PASTED_MESSAGE
+	    	    );
+	    	  } else {
+	    	    showNotificationIfEnabled(
+	    	      NEW_FORGE_SESSION_MESSAGE,
+	    	      'info'
+	    	    );
+	    	    showCopyReferenceInActivityBar(
+	    	      FILE_REFERENCE_COPIED_MESSAGE
+	    	    );
+	    	  }
+	    } else {
+	      showNotificationIfEnabled(NEW_FORGE_SESSION_MESSAGE, 'info');
+	    }
   }
 
   async function copyFileReference() {
     const fileRef = getFileReference();
-    if (!fileRef) {
-      showNotificationIfEnabled("No file found.", 'warning');
-      return;
-    }
+	    if (!fileRef) {
+	      showNotificationIfEnabled(NO_FILE_FOUND_MESSAGE, 'warning');
+	      return;
+	    }
 
     // Always copy to clipboard first
     await vscode.env.clipboard.writeText(fileRef);
@@ -187,12 +191,12 @@ export function activate(context: vscode.ExtensionContext) {
       .getConfiguration("forge")
       .get<string>("openTerminal", "once");
 
-    if (openTerminal === "never") {
-      showCopyReferenceInActivityBar(
-        "File reference copied to clipboard."
-      );
-      return;
-    }
+	      if (openTerminal === "never") {
+	      	showCopyReferenceInActivityBar(
+	      	  "File reference copied to clipboard."
+	      	);
+	        return;
+	      }
 
     // Once mode (default): Open terminal once and reuse it, copy when ambiguous
     // Check if Forge is running externally and get process count
@@ -247,16 +251,16 @@ export function activate(context: vscode.ExtensionContext) {
         .getConfiguration("forge")
         .get<boolean>("autoPaste", true);
 
-      if (autoPaste) {
-        targetForgeTerminal.sendText(fileRef, false);
-        showCopyReferenceInActivityBar(
-          "File reference pasted to terminal"
-        );
-      } else {
-        showCopyReferenceInActivityBar(
-          "File reference copied to clipboard"
-        );
-      }
+	      if (autoPaste) {
+	        targetForgeTerminal.sendText(fileRef, false);
+	        showCopyReferenceInActivityBar(
+	          "File reference pasted to terminal"
+	        );
+	      } else {
+	        showCopyReferenceInActivityBar(
+	          FILE_REFERENCE_COPIED_MESSAGE
+	        );
+	      }
       return;
     }
 
@@ -267,7 +271,7 @@ export function activate(context: vscode.ExtensionContext) {
       startForgeWithAutoPaste(terminal, fileRef);
       showNotificationIfEnabled("New Forge terminal created.", 'info');
       showCopyReferenceInActivityBar(
-        "File reference will be pasted automatically"
+	        FILE_REFERENCE_WILL_BE_PASTED_MESSAGE
       );
       return;
     }
@@ -459,7 +463,7 @@ export function activate(context: vscode.ExtensionContext) {
   async function copyFileReferenceWithFormat(format: "absolute" | "relative") {
     const fileRef = getFileReference(format);
     if (!fileRef) {
-      showNotificationIfEnabled("No file found.", 'warning');
+	      showNotificationIfEnabled(NO_FILE_FOUND_MESSAGE, 'warning');
       return;
     }
 
