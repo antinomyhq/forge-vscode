@@ -6,7 +6,7 @@ suite('Integration Tests', () => {
     let extension: vscode.Extension<unknown> | undefined;
 
     suiteSetup(async () => {
-        extension = vscode.extensions.getExtension('Forge.forge-vscode');
+        extension = vscode.extensions.getExtension('ForgeCode.forge-vscode');
         if (extension && !extension.isActive) {
             await extension.activate();
         }
@@ -14,18 +14,18 @@ suite('Integration Tests', () => {
 
     test('Copy file reference command should be registered', async () => {
         const commands = await vscode.commands.getCommands();
-        const copyCommandExists = commands.includes('forge.copyFileReference');
+        const copyCommandExists = commands.includes('forgecode.copyFileReference');
         assert.ok(copyCommandExists, 'copyFileReference command should be registered');
     });
 
     test('Start Forge session command should be registered', async () => {
         const commands = await vscode.commands.getCommands();
-        const sessionCommandExists = commands.includes('forge.startNewForgeSession');
+        const sessionCommandExists = commands.includes('forgecode.startNewForgeSession');
         assert.ok(sessionCommandExists, 'startNewForgeSession command should be registered');
     });
 
     test('Extension should activate without errors', async () => {
-        const extension = vscode.extensions.getExtension('Forge.forge-vscode');
+        const extension = vscode.extensions.getExtension('ForgeCode.forge-vscode');
         assert.ok(extension, 'Extension should be found');
         
         if (!extension.isActive) {
@@ -65,7 +65,7 @@ suite('Integration Tests', () => {
         // Test that copy commands don't throw errors (with timeout)
         try {
             await Promise.race([
-                vscode.commands.executeCommand('forge.copyFileReference'),
+                vscode.commands.executeCommand('forgecode.copyFileReference'),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 1000))
             ]);
             assert.ok(true, 'Copy commands should execute without errors');
@@ -84,7 +84,7 @@ suite('Integration Tests', () => {
     test('Should handle terminal creation', async () => {
         // Test that terminal creation doesn't throw errors
         try {
-            await vscode.commands.executeCommand('forge.startNewForgeSession');
+            await vscode.commands.executeCommand('forgecode.startNewForgeSession');
             assert.ok(true, 'Start Forge session command should execute without errors');
         } catch {
             // Expected to fail if Forge is not installed, but should not crash

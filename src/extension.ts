@@ -52,7 +52,7 @@ function initializeServices(context: vscode.ExtensionContext): void {
 
 function registerCommands(context: vscode.ExtensionContext): void {
   const copyFileReferenceCommand = vscode.commands.registerCommand(
-    "forge.copyFileReference",
+    "forgecode.copyFileReference",
     async () => {
       await copyCommand.copyFileReference();
       showCopyReferenceInActivityBar("File reference copied to clipboard");
@@ -60,14 +60,14 @@ function registerCommands(context: vscode.ExtensionContext): void {
   );
 
   const startNewForgeSessionCommand = vscode.commands.registerCommand(
-    "forge.startNewForgeSession",
+    "forgecode.startNewForgeSession",
     async () => {
       await forgeSessionCommand.startNewForgeSession();
     }
   );
 
   const copyFileReferenceAndPasteCommand = vscode.commands.registerCommand(
-    "forge.copyFileReferenceAndPaste",
+    "forgecode.copyFileReferenceAndPaste",
     async () => {
       await forgeSessionCommand.copyFileReferenceAndPaste();
       showCopyReferenceInActivityBar("File reference copied to clipboard");
@@ -76,7 +76,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
 
   // Context menu commands for absolute and relative paths
   const copyAbsoluteReferenceCommand = vscode.commands.registerCommand(
-    "forge.copyAbsoluteReference",
+    "forgecode.copyFileReferenceAbsolute",
     async () => {
       await copyCommand.copyFileReferenceWithFormat("absolute");
       showCopyReferenceInActivityBar("Absolute file reference copied to clipboard");
@@ -84,7 +84,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
   );
 
   const copyRelativeReferenceCommand = vscode.commands.registerCommand(
-    "forge.copyRelativeReference",
+    "forgecode.copyFileReferenceRelative",
     async () => {
       await copyCommand.copyFileReferenceWithFormat("relative");
       showCopyReferenceInActivityBar("Relative file reference copied to clipboard");
