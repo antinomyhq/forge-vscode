@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import {
-	TERMINAL_NAME,
 	CLIPBOARD_MESSAGE,
 	FORGE_STARTING_MESSAGE,
 	NO_FILE_FOUND_MESSAGE,
@@ -12,6 +11,7 @@ import { ConfigService } from "./services/configService";
 import { ProcessService } from "./services/processService";
 import { FileReferenceService } from "./services/fileReferenceService";
 import { NotificationService } from "./services/notificationService";
+import { TerminalService } from "./services/terminalService";
 
 // Global reference to notification service for cleanup in deactivate()
 let notificationService: NotificationService | null = null;
@@ -35,25 +35,10 @@ export function activate(context: vscode.ExtensionContext) {
   const processService = new ProcessService();
   const fileReferenceService = new FileReferenceService(configService);
   const localNotificationService = new NotificationService(configService);
+  const terminalService = new TerminalService(context, configService);
 
   // Store reference for cleanup in deactivate()
   notificationService = localNotificationService;
-
-  // Track the last focused Forge terminal
-  let lastFocusedForgeTerminal: vscode.Terminal | null = null;
-
-  // Helper function to check if a terminal is a Forge terminal
-  const isForgeTerminal = (terminal: vscode.Terminal) =>
-    terminal.name === TERMINAL_NAME || terminal.name.startsWith(TERMINAL_NAME);
-
-  // Listen for terminal focus changes
-  const terminalChangeDisposable = vscode.window.onDidChangeActiveTerminal(
-    (terminal) => {
-      if (terminal && isForgeTerminal(terminal)) {
-        lastFocusedForgeTerminal = terminal;
-      }
-    }
-  );
 
   let startNewForgeSessionDisposable = vscode.commands.registerCommand(
     "forgecode.startNewForgeSession",
@@ -90,12 +75,11 @@ export function activate(context: vscode.ExtensionContext) {
     copyFileReferenceDisposable,
     copyFileReferenceAbsoluteDisposable,
     copyFileReferenceRelativeDisposable,
-    terminalChangeDisposable
+    terminalService.getTerminalChangeDisposable()
   );
 
   async function startNewForgeSession() {
-    // Create and start new Forge terminal
-    const terminal = createRightSideTerminal();
+    const terminal = terminalService.createForgeTerminal();
     terminal.show();
     terminal.sendText("forge", true);
 
@@ -154,29 +138,12 @@ export function activate(context: vscode.ExtensionContext) {
 	      }
 
     // Once mode (default): Open terminal once and reuse it, copy when ambiguous
-    // Check if Forge is running externally and get process count
     const externalRunning = await processService.checkExternalForgeProcess();
     const totalForgeProcesses = await processService.checkForgeProcessCount();
 
-    // Find all Forge terminals in VS Code
-    const forgeTerminals = vscode.window.terminals.filter(isForgeTerminal);
+    const forgeTerminals = terminalService.getForgeTerminals();
+    const targetForgeTerminal = terminalService.getTargetForgeTerminal();
 
-    // Get the target Forge terminal: tracked one if valid, otherwise fallback
-    const targetForgeTerminal =
-      lastFocusedForgeTerminal &&
-      forgeTerminals.includes(lastFocusedForgeTerminal)
-        ? lastFocusedForgeTerminal
-        : forgeTerminals[forgeTerminals.length - 1] || null;
-
-    // Update tracking if we're using a fallback
-    if (
-      targetForgeTerminal &&
-      targetForgeTerminal !== lastFocusedForgeTerminal
-    ) {
-      lastFocusedForgeTerminal = targetForgeTerminal;
-    }
-
-    // Check for different scenarios
     const hasMultipleForgeTerminals = forgeTerminals.length > 1;
 
     // Scenario 1: Multiple Forge terminals exist
@@ -218,13 +185,12 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     // Scenario 4: No Forge terminal in VS Code and no external Forge
-    // Create new terminal and auto-paste after startup delay
     if (!externalRunning && forgeTerminals.length === 0) {
-      const terminal = createRightSideTerminal();
-      startForgeWithAutoPaste(terminal, fileRef);
+      const terminal = terminalService.createForgeTerminal();
+      terminalService.startForgeWithAutoPaste(terminal, fileRef);
       localNotificationService.showNotificationIfEnabled("New Forge terminal created.", 'info');
       localNotificationService.showCopyReferenceInActivityBar(
-	        FILE_REFERENCE_WILL_BE_PASTED_MESSAGE
+        FILE_REFERENCE_WILL_BE_PASTED_MESSAGE
       );
       return;
     }
@@ -250,8 +216,8 @@ export function activate(context: vscode.ExtensionContext) {
         );
 
         if (action === "Launch Forge Inside VSCode") {
-          const terminal = createRightSideTerminal();
-          startForgeWithAutoPaste(terminal, fileRef);
+          const terminal = terminalService.createForgeTerminal();
+          terminalService.startForgeWithAutoPaste(terminal, fileRef);
           localNotificationService.showNotificationIfEnabled(FORGE_STARTING_MESSAGE, 'info');
         }
       }
@@ -259,53 +225,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  function createRightSideTerminal(): vscode.Terminal {
-    const terminal = vscode.window.createTerminal({
-      name: TERMINAL_NAME,
-      iconPath: {
-        light: vscode.Uri.file(
-          context.asAbsolutePath("images/favicon-dark.svg")
-        ),
-        dark: vscode.Uri.file(
-          context.asAbsolutePath("images/favicon-light.svg")
-        ),
-      },
-      location: {
-        viewColumn: vscode.ViewColumn.Beside,
-        preserveFocus: false,
-      },
-    });
-
-    // Update our tracking since this will become the active terminal
-    lastFocusedForgeTerminal = terminal;
-    return terminal;
-  }
-
-  function startForgeWithAutoPaste(terminal: vscode.Terminal, fileRef: string) {
-    // Start Forge in the terminal
-    terminal.show();
-    terminal.sendText("forge", true);
-
-    const autoPaste = configService.getAutoPasteEnabled();
-
-    if (autoPaste) {
-      const pasteDelay = configService.getPasteDelay();
-      setTimeout(() => {
-        terminal.sendText(fileRef, false);
-      }, pasteDelay);
-    }
-    // When disabled: only start Forge, no auto-paste
-  }
-
-  // Process detection functions moved to services/processService.ts
-
-  // Path utilities and file reference generation moved to:
-  // - utils/pathUtils.ts
-  // - services/fileReferenceService.ts
-
-  /**
-   * Copy file reference with a specific path format (for context menu commands)
-   */
   // Context menu commands - only copy to clipboard (no auto-paste)
   async function copyFileReferenceWithFormat(format: "absolute" | "relative") {
     const fileRef = fileReferenceService.getFileReference(format);
