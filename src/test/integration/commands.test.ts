@@ -18,12 +18,6 @@ suite('Integration Tests', () => {
         assert.ok(copyCommandExists, 'copyFileReference command should be registered');
     });
 
-    test('Copy file reference and paste command should be registered', async () => {
-        const commands = await vscode.commands.getCommands();
-        const copyAndPasteCommandExists = commands.includes('forgecode.copyFileReferenceAndPaste');
-        assert.ok(copyAndPasteCommandExists, 'copyFileReferenceAndPaste command should be registered');
-    });
-
     test('Start Forge session command should be registered', async () => {
         const commands = await vscode.commands.getCommands();
         const sessionCommandExists = commands.includes('forgecode.startNewForgeSession');
@@ -85,20 +79,6 @@ suite('Integration Tests', () => {
         
         // Clean up
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-    });
-
-    test('Copy file reference and paste command should execute', async () => {
-        const extension = vscode.extensions.getExtension('ForgeCode.forge-vscode');
-        if (extension && !extension.isActive) {
-            await extension.activate();
-        }
-        
-        try {
-            await vscode.commands.executeCommand('forgecode.copyFileReferenceAndPaste');
-            assert.ok(true, 'copyFileReferenceAndPaste command should execute without errors');
-        } catch (error: unknown) {
-            assert.fail(`copyFileReferenceAndPaste command should not throw: ${error instanceof Error ? error.message : String(error)}`);
-        }
     });
 
     test('Should handle terminal creation', async () => {

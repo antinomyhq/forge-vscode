@@ -161,8 +161,8 @@
     },
     "keybindings": [
       {
-        "command": "forgecode.copyFileReferenceAndPaste",
-        "title": "Copy File Reference and Open Terminal",
+        "command": "forgecode.copyFileReference",
+        "title": "Copy File Reference",
         "key": "ctrl+u",
         "mac": "ctrl+u",
         "win": "ctrl+u",
