@@ -172,10 +172,7 @@
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "check-types": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vscode-test",
-    "release:patch": "npm version patch && git push origin main --follow-tags",
-    "release:minor": "npm version minor && git push origin main --follow-tags",
-    "release:major": "npm version major && git push origin main --follow-tags"
+    "test": "vscode-test"
   },
   "devDependencies": {
     "@types/vscode": "^1.102.0",
