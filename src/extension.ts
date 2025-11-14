@@ -3,7 +3,6 @@ import {
 	TERMINAL_NAME,
 	CLIPBOARD_MESSAGE,
 	FORGE_STARTING_MESSAGE,
-	STATUS_BAR_HIDE_DELAY,
 	NO_FILE_FOUND_MESSAGE,
 	NEW_FORGE_SESSION_MESSAGE,
 	FILE_REFERENCE_WILL_BE_PASTED_MESSAGE,
@@ -12,73 +11,21 @@ import {
 import { ConfigService } from "./services/configService";
 import { ProcessService } from "./services/processService";
 import { FileReferenceService } from "./services/fileReferenceService";
+import { NotificationService } from "./services/notificationService";
+
+// Global reference to notification service for cleanup in deactivate()
+let notificationService: NotificationService | null = null;
 
 // This method is called when your extension is deactivated
 export function deactivate() {
-  // Clean up status bar item
-  if (copyStatusBarItem) {
-    copyStatusBarItem.dispose();
-    copyStatusBarItem = null;
-  }
-  if (copyTimeout) {
-    clearTimeout(copyTimeout);
-    copyTimeout = null;
+  // Clean up notification service resources
+  if (notificationService) {
+    notificationService.dispose();
+    notificationService = null;
   }
 }
 
-// Note: This function needs access to configService, so it will be moved inside activate()
-// or we need to pass configService as a parameter. For now, keeping original implementation
-// to avoid breaking changes. Will be refactored in Phase 2 (UI Layer).
-function showNotificationIfEnabled(message: string, messageType: 'info' | 'warning' | 'error' = 'info', ...items: string[]) {
-  const notifications = vscode.workspace
-    .getConfiguration("forge")
-    .get<{info: boolean, warning: boolean, error: boolean}>("notifications");
-
-  // Check if this specific notification type is enabled
-  if (!notifications?.[messageType]) {
-    return Promise.resolve(undefined);
-  }
-
-  switch (messageType) {
-    case 'warning':
-      return vscode.window.showWarningMessage(message, ...items);
-    case 'error':
-      return vscode.window.showErrorMessage(message, ...items);
-    default:
-      return vscode.window.showInformationMessage(message, ...items);
-  }
-}
-
-// Reusable status bar item and counter for copy notifications
-let copyStatusBarItem: vscode.StatusBarItem | null = null;
-let copyCount = 0;
-let copyTimeout: NodeJS.Timeout | null = null;
-
-function showCopyReferenceInActivityBar(message: string) {
-  copyCount++;
-
-  // Create status bar item if it doesn't exist
-  if (!copyStatusBarItem) {
-    copyStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-  }
-
-  copyStatusBarItem.text = copyCount > 1
-    ? `$(forge-logo) ${message} (${copyCount})`
-    : `$(forge-logo) ${message}`;
-  copyStatusBarItem.show();
-
-  // Clear existing timeout if any
-  if (copyTimeout) {
-    clearTimeout(copyTimeout);
-  }
-
-		// Set new timeout to hide and reset
-		copyTimeout = setTimeout(() => {
-			copyStatusBarItem?.hide();
-			copyCount = 0;
-			copyTimeout = null;
-		}, STATUS_BAR_HIDE_DELAY);
-}
+// Notification functions moved to services/notificationService.ts
 
 
 
@@ -87,6 +34,10 @@ export function activate(context: vscode.ExtensionContext) {
   const configService = new ConfigService();
   const processService = new ProcessService();
   const fileReferenceService = new FileReferenceService(configService);
+  const localNotificationService = new NotificationService(configService);
+
+  // Store reference for cleanup in deactivate()
+  notificationService = localNotificationService;
 
   // Track the last focused Forge terminal
   let lastFocusedForgeTerminal: vscode.Terminal | null = null;
@@ -161,32 +112,32 @@ export function activate(context: vscode.ExtensionContext) {
 	    	    setTimeout(() => {
 	    	      terminal.sendText(fileRef, false);
 	    	    }, pasteDelay);
-	    	
-	    	    showNotificationIfEnabled(
+
+	    	    localNotificationService.showNotificationIfEnabled(
 	    	      NEW_FORGE_SESSION_MESSAGE,
 	    	      'info'
 	    	    );
-	    	    showCopyReferenceInActivityBar(
+	    	    localNotificationService.showCopyReferenceInActivityBar(
 	    	      FILE_REFERENCE_WILL_BE_PASTED_MESSAGE
 	    	    );
 	    	  } else {
-	    	    showNotificationIfEnabled(
+	    	    localNotificationService.showNotificationIfEnabled(
 	    	      NEW_FORGE_SESSION_MESSAGE,
 	    	      'info'
 	    	    );
-	    	    showCopyReferenceInActivityBar(
+	    	    localNotificationService.showCopyReferenceInActivityBar(
 	    	      FILE_REFERENCE_COPIED_MESSAGE
 	    	    );
 	    	  }
 	    } else {
-	      showNotificationIfEnabled(NEW_FORGE_SESSION_MESSAGE, 'info');
+	      localNotificationService.showNotificationIfEnabled(NEW_FORGE_SESSION_MESSAGE, 'info');
 	    }
   }
 
   async function copyFileReference() {
     const fileRef = fileReferenceService.getFileReference();
 	    if (!fileRef) {
-	      showNotificationIfEnabled(NO_FILE_FOUND_MESSAGE, 'warning');
+	      localNotificationService.showNotificationIfEnabled(NO_FILE_FOUND_MESSAGE, 'warning');
 	      return;
 	    }
 
@@ -196,7 +147,7 @@ export function activate(context: vscode.ExtensionContext) {
     const openTerminal = configService.getOpenTerminalMode();
 
 	      if (openTerminal === "never") {
-	      	showCopyReferenceInActivityBar(
+	      	localNotificationService.showCopyReferenceInActivityBar(
 	      	  "File reference copied to clipboard."
 	      	);
 	        return;
@@ -231,7 +182,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Scenario 1: Multiple Forge terminals exist
     // Show clipboard message and let user manually paste to avoid ambiguity
     if (hasMultipleForgeTerminals) {
-      showCopyReferenceInActivityBar(CLIPBOARD_MESSAGE);
+      localNotificationService.showCopyReferenceInActivityBar(CLIPBOARD_MESSAGE);
       return;
     }
 
@@ -243,7 +194,7 @@ export function activate(context: vscode.ExtensionContext) {
       totalForgeProcesses > forgeTerminals.length;
 
     if (hasBothExternalAndInternal) {
-      showCopyReferenceInActivityBar(CLIPBOARD_MESSAGE);
+      localNotificationService.showCopyReferenceInActivityBar(CLIPBOARD_MESSAGE);
       return;
     }
 
@@ -255,11 +206,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 	      if (autoPaste) {
 	        targetForgeTerminal.sendText(fileRef, false);
-	        showCopyReferenceInActivityBar(
+	        localNotificationService.showCopyReferenceInActivityBar(
 	          "File reference pasted to terminal"
 	        );
 	      } else {
-	        showCopyReferenceInActivityBar(
+	        localNotificationService.showCopyReferenceInActivityBar(
 	          FILE_REFERENCE_COPIED_MESSAGE
 	        );
 	      }
@@ -271,8 +222,8 @@ export function activate(context: vscode.ExtensionContext) {
     if (!externalRunning && forgeTerminals.length === 0) {
       const terminal = createRightSideTerminal();
       startForgeWithAutoPaste(terminal, fileRef);
-      showNotificationIfEnabled("New Forge terminal created.", 'info');
-      showCopyReferenceInActivityBar(
+      localNotificationService.showNotificationIfEnabled("New Forge terminal created.", 'info');
+      localNotificationService.showCopyReferenceInActivityBar(
 	        FILE_REFERENCE_WILL_BE_PASTED_MESSAGE
       );
       return;
@@ -281,7 +232,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Scenario 5: Forge running externally only
     // Prompt user to either continue externally or launch inside VS Code
     if (externalRunning && !targetForgeTerminal) {
-      showCopyReferenceInActivityBar(
+      localNotificationService.showCopyReferenceInActivityBar(
         "File reference copied to clipboard. Paste in external Forge terminal."
       );
 
@@ -301,7 +252,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (action === "Launch Forge Inside VSCode") {
           const terminal = createRightSideTerminal();
           startForgeWithAutoPaste(terminal, fileRef);
-          showNotificationIfEnabled(FORGE_STARTING_MESSAGE, 'info');
+          localNotificationService.showNotificationIfEnabled(FORGE_STARTING_MESSAGE, 'info');
         }
       }
       return;
@@ -359,7 +310,7 @@ export function activate(context: vscode.ExtensionContext) {
   async function copyFileReferenceWithFormat(format: "absolute" | "relative") {
     const fileRef = fileReferenceService.getFileReference(format);
     if (!fileRef) {
-	      showNotificationIfEnabled(NO_FILE_FOUND_MESSAGE, 'warning');
+	      localNotificationService.showNotificationIfEnabled(NO_FILE_FOUND_MESSAGE, 'warning');
       return;
     }
 
@@ -367,7 +318,7 @@ export function activate(context: vscode.ExtensionContext) {
     await vscode.env.clipboard.writeText(fileRef);
 
     const formatLabel = format === "absolute" ? "absolute" : "relative";
-    showCopyReferenceInActivityBar(
+    localNotificationService.showCopyReferenceInActivityBar(
       `File reference (${formatLabel} path) copied to clipboard`
     );
   }
