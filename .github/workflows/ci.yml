@@ -163,3 +163,9 @@ jobs:
           pat: ${{ secrets.VSCE_PAT }}
           registryUrl: https://marketplace.visualstudio.com
 
+
+      - name: Publish GitHub Release
+        run: gh release edit ${{ needs.release_drafter.outputs.tag_name }} --draft=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
