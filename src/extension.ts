@@ -1,26 +1,12 @@
 import * as vscode from "vscode";
+import { CommandService } from "./services/commandService";
 import { ConfigService } from "./services/configService";
-import { ProcessService } from "./services/processService";
 import { FileReferenceService } from "./services/fileReferenceService";
 import { NotificationService } from "./services/notificationService";
+import { ProcessService } from "./services/processService";
 import { TerminalService } from "./services/terminalService";
-import { CommandService } from "./services/commandService";
 
-// Global reference to notification service for cleanup in deactivate()
 let notificationService: NotificationService | null = null;
-
-// This method is called when your extension is deactivated
-export function deactivate() {
-  // Clean up notification service resources
-  if (notificationService) {
-    notificationService.dispose();
-    notificationService = null;
-  }
-}
-
-// Notification functions moved to services/notificationService.ts
-
-
 
 export function activate(context: vscode.ExtensionContext) {
   // Initialize services
@@ -37,35 +23,33 @@ export function activate(context: vscode.ExtensionContext) {
     terminalService
   );
 
-  // Store reference for cleanup in deactivate()
   notificationService = localNotificationService;
 
   // Register commands
-  let startNewForgeSessionDisposable = vscode.commands.registerCommand(
-    "forgecode.startNewForgeSession",
-    async () => await commandService.startNewForgeSession()
-  );
-
-  let copyFileReferenceDisposable = vscode.commands.registerCommand(
-    "forgecode.copyFileReference",
-    async () => await commandService.copyFileReference()
-  );
-
-  let copyFileReferenceAbsoluteDisposable = vscode.commands.registerCommand(
-    "forgecode.copyFileReferenceAbsolute",
-    async () => await commandService.copyFileReferenceWithFormat("absolute")
-  );
-
-  let copyFileReferenceRelativeDisposable = vscode.commands.registerCommand(
-    "forgecode.copyFileReferenceRelative",
-    async () => await commandService.copyFileReferenceWithFormat("relative")
-  );
-
   context.subscriptions.push(
-    startNewForgeSessionDisposable,
-    copyFileReferenceDisposable,
-    copyFileReferenceAbsoluteDisposable,
-    copyFileReferenceRelativeDisposable,
+    vscode.commands.registerCommand(
+      "forgecode.startNewForgeSession",
+      () => commandService.startNewForgeSession()
+    ),
+    vscode.commands.registerCommand(
+      "forgecode.copyFileReference",
+      () => commandService.copyFileReference()
+    ),
+    vscode.commands.registerCommand(
+      "forgecode.copyFileReferenceAbsolute",
+      () => commandService.copyFileReferenceWithFormat("absolute")
+    ),
+    vscode.commands.registerCommand(
+      "forgecode.copyFileReferenceRelative",
+      () => commandService.copyFileReferenceWithFormat("relative")
+    ),
     terminalService.getTerminalChangeDisposable()
   );
+}
+
+export function deactivate() {
+  if (notificationService) {
+    notificationService.dispose();
+    notificationService = null;
+  }
 }
