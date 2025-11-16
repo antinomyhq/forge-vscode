@@ -8,7 +8,7 @@ import { TerminalService } from "./services/terminalService";
 
 let notificationService: NotificationService | null = null;
 
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): void {
   // Initialize services
   const configService = new ConfigService();
   const processService = new ProcessService();
@@ -47,7 +47,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-export function deactivate() {
+export function deactivate(): void {
   if (notificationService) {
     notificationService.dispose();
     notificationService = null;
