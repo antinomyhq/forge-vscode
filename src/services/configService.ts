@@ -21,7 +21,13 @@ export class ConfigService {
 
   isNotificationEnabled(messageType: "info" | "warning" | "error"): boolean {
     const notifications = this.getNotificationConfig();
-    return notifications?.[messageType] ?? true;
+    if (!notifications) {
+      return true;
+    }
+    // Safe: messageType is a union type with only 3 valid keys
+    // eslint-disable-next-line security/detect-object-injection
+    const value = notifications[messageType];
+    return value ?? true;
   }
 
   /**

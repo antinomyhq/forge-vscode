@@ -1,4 +1,4 @@
-import { exec } from "child_process";
+import { exec, ExecException } from "child_process";
 
 // Detects external Forge processes using platform-specific commands
 export class ProcessService {
@@ -15,8 +15,10 @@ export class ProcessService {
     return new Promise((resolve) => {
       const processCheckCmd = this.getProcessCheckCommand();
 
-      exec(processCheckCmd, (error: any, stdout: string) => {
-        if (error) {
+      // Safe: processCheckCmd is generated from trusted platform-specific commands
+      // eslint-disable-next-line security/detect-child-process
+      exec(processCheckCmd, (error: ExecException | null, stdout: string) => {
+        if (error !== null) {
           resolve(0);
           return;
         }

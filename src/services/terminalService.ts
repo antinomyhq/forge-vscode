@@ -76,14 +76,19 @@ export class TerminalService {
   getTargetForgeTerminal(): vscode.Terminal | null {
     const forgeTerminals = this.getForgeTerminals();
 
-    const targetForgeTerminal =
-      this.lastFocusedForgeTerminal &&
-      forgeTerminals.includes(this.lastFocusedForgeTerminal)
-        ? this.lastFocusedForgeTerminal
-        : forgeTerminals[forgeTerminals.length - 1] || null;
+    let targetForgeTerminal: vscode.Terminal | null = null;
 
     if (
-      targetForgeTerminal &&
+      this.lastFocusedForgeTerminal !== null &&
+      forgeTerminals.includes(this.lastFocusedForgeTerminal)
+    ) {
+      targetForgeTerminal = this.lastFocusedForgeTerminal;
+    } else if (forgeTerminals.length > 0) {
+      targetForgeTerminal = forgeTerminals[forgeTerminals.length - 1];
+    }
+
+    if (
+      targetForgeTerminal !== null &&
       targetForgeTerminal !== this.lastFocusedForgeTerminal
     ) {
       this.lastFocusedForgeTerminal = targetForgeTerminal;

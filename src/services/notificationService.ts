@@ -35,12 +35,10 @@ export class NotificationService {
     this.copyCount++;
 
     // Create status bar item if it doesn't exist
-    if (!this.copyStatusBarItem) {
-      this.copyStatusBarItem = vscode.window.createStatusBarItem(
-        vscode.StatusBarAlignment.Left,
-        100
-      );
-    }
+    this.copyStatusBarItem ??= vscode.window.createStatusBarItem(
+      vscode.StatusBarAlignment.Left,
+      100
+    );
 
     this.copyStatusBarItem.text =
       this.copyCount > 1

@@ -22,13 +22,11 @@ export function getFilePathWithFormat(
   // If no format specified, use user's preference from settings
   let pathFormat = format;
 
-  if (!pathFormat && configService) {
-    pathFormat = configService.getFileReferenceFormat() as "absolute" | "relative";
-  } else if (!pathFormat) {
-    pathFormat = vscode.workspace
-      .getConfiguration("forge")
-      .get<string>("fileReferenceFormat", "absolute") as "absolute" | "relative";
-  }
+  pathFormat ??= configService
+    ? (configService.getFileReferenceFormat() as "absolute" | "relative")
+    : (vscode.workspace
+        .getConfiguration("forge")
+        .get<string>("fileReferenceFormat", "absolute") as "absolute" | "relative");
 
   if (pathFormat === "relative") {
     return getWorkspaceRelativePath(fileUri);
