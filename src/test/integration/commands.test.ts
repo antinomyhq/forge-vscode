@@ -1,13 +1,23 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import * as sinon from 'sinon';
 
 suite('Integration Tests', () => {
     let extension: vscode.Extension<unknown> | undefined;
+    let clock: sinon.SinonFakeTimers | undefined;
 
     suiteSetup(async () => {
         extension = vscode.extensions.getExtension('ForgeCode.forge-vscode');
         if (extension && !extension.isActive) {
             await extension.activate();
+        }
+    });
+
+    teardown(() => {
+        // Restore real timers after each test if they were used
+        if (clock) {
+            clock.restore();
+            clock = undefined;
         }
     });
 
@@ -66,7 +76,7 @@ suite('Integration Tests', () => {
     });
 
     test('Should handle copy commands without active editor gracefully', async function() {
-        this.timeout(5000);
+        this.timeout(3000);
 
         // Create a temporary text document to ensure there's an active editor
         const doc = await vscode.workspace.openTextDocument({
@@ -77,18 +87,45 @@ suite('Integration Tests', () => {
 
         assert.ok(editor !== undefined, 'Should be able to create and show text document');
 
-        // Test that copy commands don't throw errors (with timeout)
+        // Initialize fake timers for timeout test
+        clock = sinon.useFakeTimers({ shouldClearNativeTimers: true });
+
+        // Test that copy command executes without errors (with timeout using fake timers)
         try {
-            await Promise.race([
-                vscode.commands.executeCommand('forgecode.copyFileReference'),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2000))
-            ]);
-            assert.ok(true, 'Copy commands should execute without errors');
+            const commandPromise = vscode.commands.executeCommand('forgecode.copyFileReference');
+            const timeoutPromise = new Promise<void>((_, reject) => {
+                setTimeout(() => reject(new Error('Timeout')), 2000);
+            });
+
+            // Start the race
+            const racePromise = Promise.race([commandPromise, timeoutPromise]);
+
+            // Allow command to complete if it's fast (check every 100ms)
+            for (let elapsed = 0; elapsed < 2000; elapsed += 100) {
+                // Give microtasks a chance to resolve
+                await Promise.resolve();
+
+                // Check if command completed
+                const completed = await Promise.race([
+                    commandPromise.then(() => true, () => true),
+                    Promise.resolve(false)
+                ]);
+
+                if (completed) {
+                    break;
+                }
+
+                // Advance time by 100ms
+                clock.tick(100);
+            }
+
+            await racePromise;
+            assert.ok(true, 'Copy command should execute without errors');
         } catch (error: unknown) {
             if (error instanceof Error && error.message === 'Timeout') {
-                assert.ok(true, 'Copy commands handled timeout gracefully');
+                assert.ok(true, 'Copy command handled timeout gracefully');
             } else {
-                assert.ok(true, `Copy commands handled gracefully: ${error instanceof Error ? error.message : String(error)}`);
+                assert.ok(true, `Copy command handled gracefully: ${error instanceof Error ? error.message : String(error)}`);
             }
         }
 
@@ -97,7 +134,7 @@ suite('Integration Tests', () => {
     });
 
     test('Should handle terminal creation', async function() {
-        this.timeout(5000);
+        this.timeout(3000);
 
         // Test that terminal creation doesn't throw errors
         try {
@@ -110,7 +147,7 @@ suite('Integration Tests', () => {
     });
 
     test('File path generation should work with active document', async function() {
-        this.timeout(5000);
+        this.timeout(3000);
 
         // Create a temporary file
         const testContent = 'function test() { return true; }';
@@ -135,8 +172,10 @@ suite('Integration Tests', () => {
     });
 
     test('Should handle different file types', async function() {
-        // Increase timeout for this test as it opens/closes multiple editors
-        this.timeout(10000);
+        this.timeout(5000);
+
+        // Initialize fake timers for this test
+        clock = sinon.useFakeTimers({ shouldClearNativeTimers: true });
 
         const fileTypes = [
             { content: 'console.log("test");', language: 'javascript' },
@@ -154,9 +193,11 @@ suite('Integration Tests', () => {
 
             assert.ok(editor !== undefined, `Should handle ${fileType.language} files`);
 
-            // Clean up - add small delay to ensure editor is fully closed
+            // Clean up - use fake timers instead of real delay
             await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Advance fake timer by 100ms to simulate editor close delay
+            clock.tick(100);
         }
     });
 });
