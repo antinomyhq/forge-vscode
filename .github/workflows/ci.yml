@@ -94,14 +94,13 @@ jobs:
       - name: Type check
         run: npm run check-types
 
-      - name: Run tests
-        run: |
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
-            xvfb-run -a npm test
-          else
-            npm test
-          fi
-        shell: bash
+      - name: Run tests (Linux with xvfb)
+        if: matrix.os == 'ubuntu-latest'
+        run: xvfb-run -a npm test
+
+      - name: Run tests (Windows/macOS)
+        if: matrix.os != 'ubuntu-latest'
+        run: npm test
 
   build:
     name: Build
