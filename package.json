@@ -92,34 +92,6 @@
     "configuration": {
       "title": "Forge",
       "properties": {
-        "forge.showInstallationPrompt": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show installation prompt when Forge is not detected"
-        },
-        "forge.autoPaste": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically paste file references into terminals"
-        },
-        "forge.pasteDelay": {
-          "type": "number",
-          "default": 5000,
-          "description": "Delay in milliseconds to allow Forge to start before auto-pasting file references (only works when autoPaste is enabled)"
-        },
-        "forge.openTerminal": {
-          "type": "string",
-          "enum": [
-            "once",
-            "never"
-          ],
-          "enumDescriptions": [
-            "Open terminal once and reuse it for subsequent operations",
-            "Never open terminal, only copy file reference to clipboard"
-          ],
-          "default": "once",
-          "description": "Open terminal when copying file references"
-        },
         "forge.fileReferenceFormat": {
           "type": "string",
           "enum": [
@@ -131,11 +103,40 @@
             "Use workspace-relative paths (e.g., src/file.ts)"
           ],
           "default": "absolute",
-          "description": "File path format when copying file references (absolute or relative)"
+          "description": "File path format when copying file references",
+          "order": 1
+        },
+        "forge.openTerminal": {
+          "type": "string",
+          "enum": [
+            "once",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Open terminal once and reuse it for subsequent operations (enables auto-paste)",
+            "Never open terminal, only copy file reference to clipboard (disables auto-paste)"
+          ],
+          "default": "once",
+          "description": "Control terminal behavior when copying file references",
+          "order": 2
+        },
+        "forge.autoPaste": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Automatically paste file references into terminals. **Note:** Only works when `#forge.openTerminal#` is set to `once`.",
+          "order": 3
+        },
+        "forge.pasteDelay": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 0,
+          "maximum": 30000,
+          "markdownDescription": "Delay in milliseconds before auto-pasting file references to allow Forge to start. **Note:** Only applies when `#forge.autoPaste#` is enabled.",
+          "order": 4
         },
         "forge.notifications": {
           "type": "object",
-          "description": "Control which popup notifications to show.",
+          "description": "Control which popup notifications to show",
           "default": {
             "info": true,
             "warning": true,
@@ -155,7 +156,14 @@
               "description": "Show error notifications"
             }
           },
-          "additionalProperties": false
+          "additionalProperties": false,
+          "order": 5
+        },
+        "forge.showInstallationPrompt": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show installation prompt when Forge is not detected",
+          "order": 6
         }
       }
     },
