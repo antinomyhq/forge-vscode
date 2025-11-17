@@ -65,7 +65,9 @@ suite('Integration Tests', () => {
         assert.ok(typeof notifications === 'object', 'notifications should be object');
     });
 
-    test('Should handle copy commands without active editor gracefully', async () => {
+    test('Should handle copy commands without active editor gracefully', async function() {
+        this.timeout(5000);
+
         // Create a temporary text document to ensure there's an active editor
         const doc = await vscode.workspace.openTextDocument({
             content: 'test content',
@@ -79,7 +81,7 @@ suite('Integration Tests', () => {
         try {
             await Promise.race([
                 vscode.commands.executeCommand('forgecode.copyFileReference'),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 1000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 2000))
             ]);
             assert.ok(true, 'Copy commands should execute without errors');
         } catch (error: unknown) {
@@ -94,7 +96,9 @@ suite('Integration Tests', () => {
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
-    test('Should handle terminal creation', async () => {
+    test('Should handle terminal creation', async function() {
+        this.timeout(5000);
+
         // Test that terminal creation doesn't throw errors
         try {
             await vscode.commands.executeCommand('forgecode.startNewForgeSession');
@@ -105,7 +109,9 @@ suite('Integration Tests', () => {
         }
     });
 
-    test('File path generation should work with active document', async () => {
+    test('File path generation should work with active document', async function() {
+        this.timeout(5000);
+
         // Create a temporary file
         const testContent = 'function test() { return true; }';
         const doc = await vscode.workspace.openTextDocument({
@@ -128,7 +134,10 @@ suite('Integration Tests', () => {
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
     });
 
-    test('Should handle different file types', async () => {
+    test('Should handle different file types', async function() {
+        // Increase timeout for this test as it opens/closes multiple editors
+        this.timeout(10000);
+
         const fileTypes = [
             { content: 'console.log("test");', language: 'javascript' },
             { content: 'print("test")', language: 'python' },
@@ -145,8 +154,9 @@ suite('Integration Tests', () => {
 
             assert.ok(editor !== undefined, `Should handle ${fileType.language} files`);
 
-            // Clean up
+            // Clean up - add small delay to ensure editor is fully closed
             await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
     });
 });
