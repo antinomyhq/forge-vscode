@@ -5,7 +5,6 @@ import { ConfigService } from "./configService";
 // Manages VS Code notifications and status bar messages
 export class NotificationService {
   private copyStatusBarItem: vscode.StatusBarItem | null = null;
-  private copyCount = 0;
   private copyTimeout: NodeJS.Timeout | null = null;
 
   constructor(private configService: ConfigService) {}
@@ -30,20 +29,15 @@ export class NotificationService {
     }
   }
 
-  // Show message in status bar with counter support
+  // Show message in status bar
   showCopyReferenceInActivityBar(message: string): void {
-    this.copyCount++;
-
     // Create status bar item if it doesn't exist
     this.copyStatusBarItem ??= vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Left,
       100
     );
 
-    this.copyStatusBarItem.text =
-      this.copyCount > 1
-        ? `$(forge-logo) ${message} (${this.copyCount})`
-        : `$(forge-logo) ${message}`;
+    this.copyStatusBarItem.text = `$(forge-logo) ${message}`;
     this.copyStatusBarItem.show();
 
     if (this.copyTimeout) {
@@ -52,7 +46,6 @@ export class NotificationService {
 
     this.copyTimeout = setTimeout(() => {
       this.copyStatusBarItem?.hide();
-      this.copyCount = 0;
       this.copyTimeout = null;
     }, STATUS_BAR_HIDE_DELAY);
   }
@@ -68,8 +61,6 @@ export class NotificationService {
       clearTimeout(this.copyTimeout);
       this.copyTimeout = null;
     }
-
-    this.copyCount = 0;
   }
 }
 
