@@ -28,10 +28,6 @@ updates:
       day: "monday"
       time: "09:00"
     open-pull-requests-limit: 5
-    reviewers:
-      - "antinomyhq"
-    assignees:
-      - "antinomyhq"
     commit-message:
       prefix: "chore"
       include: "scope"
