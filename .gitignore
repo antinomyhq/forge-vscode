@@ -30,3 +30,6 @@ coverage/
 
 # Env files
 .env
+
+# Extension packages
+*.vsix
