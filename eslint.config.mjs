@@ -55,7 +55,8 @@ export default [
             "@typescript-eslint/await-thenable": "error",
             "@typescript-eslint/no-unnecessary-type-assertion": "warn",
             "@typescript-eslint/prefer-nullish-coalescing": "warn",
-            "@typescript-eslint/prefer-optional-chain": "warn",
+            // Disabled: conflicts with strict-boolean-expressions
+            // "@typescript-eslint/prefer-optional-chain": "warn",
             "@typescript-eslint/strict-boolean-expressions": ["warn", {
                 allowString: true,
                 allowNumber: true,
