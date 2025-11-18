@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import {
   CLIPBOARD_MESSAGE,
+  COMMIT_MESSAGE_GENERATION_FAILED,
   COMMIT_MESSAGE_GENERATION_STOPPED,
   FILE_REFERENCE_COPIED_MESSAGE,
   FILE_REFERENCE_WILL_BE_PASTED_MESSAGE,
@@ -335,6 +336,19 @@ export class CommandService {
     // Success - parse and set commit message
     let commitMessage = stdout.trim();
 
+    // Check if Forge CLI returned an error message (e.g., "⏺ [13:35:10] ERROR: No changes to commit")
+    if (commitMessage.includes("ERROR:")) {
+      const errorMatch = commitMessage.match(/ERROR:\s*(.+)/);
+      const errorMessage = errorMatch ? errorMatch[1].trim() : "Failed to generate commit message";
+
+      this.notificationService.showNotificationIfEnabled(
+        errorMessage,
+        "warning"
+      );
+      resolve();
+      return;
+    }
+
     // Strip the Forge CLI prefix (e.g., "⏺ [21:48:59] Generated commit message:")
     const lines = commitMessage.split("\n");
     if (lines.length > 0 && lines[0].includes("Generated commit message:")) {
@@ -344,7 +358,7 @@ export class CommandService {
     // Check if commit message is empty
     if (!commitMessage) {
       this.notificationService.showNotificationIfEnabled(
-        "No commit message generated. Make sure you have changes to commit.",
+        COMMIT_MESSAGE_GENERATION_FAILED,
         "warning"
       );
       resolve();

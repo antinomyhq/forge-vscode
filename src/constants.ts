@@ -28,3 +28,6 @@ export const NO_WORKSPACE_MESSAGE =
 
 export const NO_GIT_REPO_MESSAGE =
   "No Git repository found. Please initialize a Git repository to use this feature.";
+
+export const COMMIT_MESSAGE_GENERATION_FAILED =
+  "Failed to generate commit message. Please try again.";
