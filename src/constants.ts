@@ -19,3 +19,12 @@ export const FILE_REFERENCE_WILL_BE_PASTED_MESSAGE =
 
 export const FILE_REFERENCE_COPIED_MESSAGE =
   "File reference copied to clipboard";
+
+export const COMMIT_MESSAGE_GENERATION_STOPPED =
+  "Commit message generation stopped";
+
+export const NO_WORKSPACE_MESSAGE =
+  "No workspace folder found. Please open a folder to use this feature.";
+
+export const NO_GIT_REPO_MESSAGE =
+  "No Git repository found. Please initialize a Git repository to use this feature.";

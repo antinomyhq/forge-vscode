@@ -61,5 +61,13 @@ export class ConfigService {
   getFileReferenceFormat(): string {
     return this.getConfig().get<string>("fileReferenceFormat", "absolute");
   }
+
+  /**
+   * Get max diff size for commit message generation
+   * @returns Max diff size in bytes (default: 5000)
+   */
+  getCommitMessageMaxDiffSize(): number {
+    return this.getConfig().get<number>("commitMessage.maxDiffSize", 5000);
+  }
 }
 
