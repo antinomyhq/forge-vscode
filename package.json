@@ -192,9 +192,9 @@
         },
         "forge.commitMessage.maxDiffSize": {
           "type": "number",
-          "default": 5000,
-          "minimum": 5000,
-          "description": "Maximum git diff size in bytes for commit message generation (minimum 5000)",
+          "default": 10000,
+          "minimum": 10000,
+          "description": "Maximum git diff size in bytes for commit message generation (minimum 10000)",
           "order": 7
         }
       }
