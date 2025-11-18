@@ -1,14 +1,18 @@
 import * as vscode from "vscode";
 import {
   CLIPBOARD_MESSAGE,
+  COMMIT_MESSAGE_GENERATION_STOPPED,
   FILE_REFERENCE_COPIED_MESSAGE,
   FILE_REFERENCE_WILL_BE_PASTED_MESSAGE,
   FORGE_STARTING_MESSAGE,
   NEW_FORGE_SESSION_MESSAGE,
   NO_FILE_FOUND_MESSAGE,
+  NO_GIT_REPO_MESSAGE,
+  NO_WORKSPACE_MESSAGE,
 } from "../constants";
 import { ConfigService } from "./configService";
 import { FileReferenceService } from "./fileReferenceService";
+import { GitService } from "./gitService";
 import { NotificationService } from "./notificationService";
 import { ProcessService } from "./processService";
 import { TerminalService } from "./terminalService";
@@ -20,7 +24,8 @@ export class CommandService {
     private processService: ProcessService,
     private fileReferenceService: FileReferenceService,
     private notificationService: NotificationService,
-    private terminalService: TerminalService
+    private terminalService: TerminalService,
+    private gitService: GitService
   ) {}
 
   // Start new Forge session
@@ -209,6 +214,157 @@ export class CommandService {
     this.notificationService.showCopyReferenceInActivityBar(
       `File reference (${formatLabel} path) copied to clipboard`
     );
+  }
+
+  // Generate commit message using Forge AI
+  async generateCommitMessage(): Promise<void> {
+    try {
+      const maxDiffSize = this.configService.getCommitMessageMaxDiffSize();
+      const forgePath = "forge";
+      const workingDir = this.gitService.getWorkspacePath();
+
+      if (workingDir === undefined) {
+        this.notificationService.showNotificationIfEnabled(NO_WORKSPACE_MESSAGE, "error");
+        return;
+      }
+
+      // Validate Git repository
+      const repository = this.gitService.getRepository();
+      if (repository === null) {
+        this.notificationService.showNotificationIfEnabled(NO_GIT_REPO_MESSAGE, "error");
+        return;
+      }
+
+      // Set context to show stop button
+      await vscode.commands.executeCommand("setContext", "forge.generatingCommitMessage", true);
+
+      try {
+        await this.runCommitMessageGeneration(forgePath, maxDiffSize, workingDir);
+      } catch (error) {
+        await this.clearCommitMessageGenerationState();
+        throw error;
+      }
+    } catch (error) {
+      this.notificationService.showNotificationIfEnabled(
+        `Error generating commit message: ${error}`,
+        "error"
+      );
+    }
+  }
+
+  // Run commit message generation with progress
+  private async runCommitMessageGeneration(
+    forgePath: string,
+    maxDiffSize: number,
+    workingDir: string
+  ): Promise<void> {
+    await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.SourceControl,
+        title: "Generating commit message...",
+        cancellable: false,
+      },
+      async () => {
+        return new Promise<void>((resolve) => {
+          const forgeProcess = this.processService.spawnCommitMessageProcess(
+            forgePath,
+            maxDiffSize,
+            workingDir
+          );
+
+          let stdout = "";
+          let stderr = "";
+
+          // Capture stdout
+          forgeProcess.stdout?.on("data", (data: Buffer) => {
+            stdout += data.toString();
+          });
+
+          // Capture stderr
+          forgeProcess.stderr?.on("data", (data: Buffer) => {
+            stderr += data.toString();
+          });
+
+          forgeProcess.on("error", (error: Error) => {
+            void this.handleCommitMessageProcessError(error, resolve);
+          });
+
+          forgeProcess.on("close", (code: number | null, signal: string | null) => {
+            void this.handleCommitMessageProcessClose(code, signal, stdout, stderr, resolve);
+          });
+        });
+      }
+    );
+  }
+
+  private async handleCommitMessageProcessError(error: Error, resolve: () => void): Promise<void> {
+    await this.clearCommitMessageGenerationState();
+    this.notificationService.showNotificationIfEnabled(
+      `Failed to spawn forge: ${error.message}`,
+      "error"
+    );
+    resolve();
+  }
+
+  private async handleCommitMessageProcessClose(
+    code: number | null,
+    signal: string | null,
+    stdout: string,
+    stderr: string,
+    resolve: () => void
+  ): Promise<void> {
+    await this.clearCommitMessageGenerationState();
+
+    // If process was killed by signal (user stopped it)
+    if (signal !== null) {
+      this.notificationService.showNotificationIfEnabled(COMMIT_MESSAGE_GENERATION_STOPPED, "info");
+      resolve();
+      return;
+    }
+
+    // If process failed
+    if (code !== 0) {
+      this.notificationService.showNotificationIfEnabled(
+        `Failed to generate commit message: ${stderr || `Exit code ${code}`}`,
+        "error"
+      );
+      resolve();
+      return;
+    }
+
+    // Success - parse and set commit message
+    let commitMessage = stdout.trim();
+
+    // Strip the Forge CLI prefix (e.g., "⏺ [21:48:59] Generated commit message:")
+    const lines = commitMessage.split("\n");
+    if (lines.length > 0 && lines[0].includes("Generated commit message:")) {
+      commitMessage = lines.slice(1).join("\n").trim();
+    }
+
+    // Check if commit message is empty
+    if (!commitMessage) {
+      this.notificationService.showNotificationIfEnabled(
+        "No commit message generated. Make sure you have changes to commit.",
+        "warning"
+      );
+      resolve();
+      return;
+    }
+
+    // Set the commit message in SCM input box
+    this.gitService.setCommitMessage(commitMessage);
+    resolve();
+  }
+
+  // Clear commit message generation state
+  private async clearCommitMessageGenerationState(): Promise<void> {
+    this.processService.clearCommitMessageProcess();
+    await vscode.commands.executeCommand("setContext", "forge.generatingCommitMessage", false);
+  }
+
+  // Stop commit message generation
+  async stopCommitMessageGeneration(): Promise<void> {
+    this.processService.stopCommitMessageProcess();
   }
 }
 
