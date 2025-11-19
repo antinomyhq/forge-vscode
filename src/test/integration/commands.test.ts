@@ -200,5 +200,27 @@ suite('Integration Tests', () => {
             clock.tick(100);
         }
     });
+
+    test('Generate commit message command should be registered', async () => {
+        const commands = await vscode.commands.getCommands();
+        const generateCommandExists = commands.includes('forgecode.generateCommitMessage');
+        assert.ok(generateCommandExists, 'generateCommitMessage command should be registered');
+    });
+
+    test('Stop commit message generation command should be registered', async () => {
+        const commands = await vscode.commands.getCommands();
+        const stopCommandExists = commands.includes('forgecode.stopCommitMessageGeneration');
+        assert.ok(stopCommandExists, 'stopCommitMessageGeneration command should be registered');
+    });
+
+    test('Commit message configuration should be accessible', () => {
+        const config = vscode.workspace.getConfiguration('forge');
+        assert.ok(config !== undefined, 'Forge configuration should be accessible');
+
+        // Test commit message max diff size configuration
+        const maxDiffSize = config.get('commitMessage.maxDiffSize');
+        assert.ok(typeof maxDiffSize === 'number', 'commitMessage.maxDiffSize should be number');
+        assert.ok(maxDiffSize >= 10000, 'commitMessage.maxDiffSize should be at least 10000');
+    });
 });
 

@@ -20,6 +20,7 @@ This VS Code extension provides seamless integration with [Forge Code](https://f
 
 - **Copy File References**: Copy file references with line selections to clipboard
 - **Keyboard Shortcut**: Quick access with `CTRL+U` (all platforms)
+- **AI Commit Messages**: Generate intelligent commit messages using Forge AI
 - **Installation Prompt**: Suggests Forge installation if not detected
 
 ## Requirements
@@ -97,6 +98,21 @@ The extension generates references in the exact format that Forge understands:
    - **Copy Relative Path** - Forces relative path
 4. **File reference is copied** to clipboard
 5. **Paste in any terminal** where Forge is running
+
+### AI Commit Message Generation
+
+Generate intelligent commit messages with a single click:
+
+1. **Make changes** to your code and stage them (or leave unstaged)
+2. **Click the Forge icon** in the Source Control view toolbar
+3. **AI generates commit message** based on your changes
+4. **Review and commit** manually when ready
+
+The AI analyzes:
+- Your git diff (staged or unstaged changes)
+- Recent commit messages (to match your style)
+- Current branch name
+- Project context
 
 ## Configuration
 
