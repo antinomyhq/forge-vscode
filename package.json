@@ -63,6 +63,19 @@
       {
         "command": "forgecode.copyFileReferenceRelative",
         "title": "Copy Relative Path"
+      },
+      {
+        "command": "forgecode.generateCommitMessage",
+        "title": "Generate Commit Message with Forge",
+        "icon": {
+          "light": "images/forgecode-icon-dark.svg",
+          "dark": "images/forgecode-icon-light.svg"
+        }
+      },
+      {
+        "command": "forgecode.stopCommitMessageGeneration",
+        "title": "Stop Generating Commit Message",
+        "icon": "$(debug-stop)"
       }
     ],
     "submenus": [
@@ -104,6 +117,18 @@
         {
           "command": "forgecode.copyFileReferenceRelative",
           "group": "2_copy"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "forgecode.generateCommitMessage",
+          "group": "navigation@1",
+          "when": "scmProvider == git && !forge.generatingCommitMessage"
+        },
+        {
+          "command": "forgecode.stopCommitMessageGeneration",
+          "group": "navigation@1",
+          "when": "scmProvider == git && forge.generatingCommitMessage"
         }
       ]
     },
@@ -182,6 +207,13 @@
           "default": true,
           "description": "Show installation prompt when Forge is not detected",
           "order": 6
+        },
+        "forge.commitMessage.maxDiffSize": {
+          "type": "number",
+          "default": 10000,
+          "minimum": 10000,
+          "description": "Maximum git diff size in bytes for commit message generation (minimum 10000)",
+          "order": 7
         }
       }
     },
