@@ -58,12 +58,13 @@ npm install -g forgecode
 
 ### Context Menu Commands
 
-Right-click in any editor to access:
+Right-click in the **editor**, on **files**, or on **folders** in the file explorer to access the **Forge Code** menu with the following commands:
 
-- **Copy Absolute Path**: Always copy with absolute path, regardless of settings
-- **Copy Relative Path**: Always copy with workspace-relative path, regardless of settings
+- **Start New Session**: Create a new Forge terminal session
+- **Copy Absolute Path**: Copy file reference with absolute path, regardless of settings
+- **Copy Relative Path**: Copy file reference with workspace-relative path, regardless of settings
 
-These commands are available in the editor context menu (right-click) and provide direct control over the path format, independent of the `forge.fileReferenceFormat` setting.
+All Forge commands are organized under the **Forge Code** menu in both the editor and file explorer context menus for easy access.
 
 ### File Reference Format
 
@@ -88,11 +89,22 @@ The extension generates references in the exact format that Forge understands:
 3. **File reference is copied** to clipboard (format based on `forge.fileReferenceFormat` setting)
 4. **Paste in any terminal** where Forge is running
 
-#### Method 2: Context Menu (Direct Control)
+#### Method 2: Context Menu (Editor)
 
 1. **Select code** in any file (or just open a file)
 2. **Right-click** in the editor
-3. **Choose** either:
+3. **Navigate to "Forge Code"** menu
+4. **Choose one of the copy options**:
+   - **Copy Absolute Path** - Forces absolute path
+   - **Copy Relative Path** - Forces relative path
+5. **File reference is copied** to clipboard
+6. **Paste in any terminal** where Forge is running
+
+#### Method 3: Context Menu (File Explorer)
+
+1. **Right-click** on any file or folder in the file explorer
+2. **Navigate to "Forge Code"** menu
+3. **Choose one of the copy options**:
    - **Copy Absolute Path** - Forces absolute path
    - **Copy Relative Path** - Forces relative path
 4. **File reference is copied** to clipboard
