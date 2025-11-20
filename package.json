@@ -65,6 +65,13 @@
         "title": "Copy Relative Path"
       }
     ],
+    "submenus": [
+      {
+        "id": "forgecode.forgeSubmenu",
+        "label": "Forge Code",
+        "icon": "$(forge-logo)"
+      }
+    ],
     "menus": {
       "editor/title": [
         {
@@ -74,18 +81,29 @@
       ],
       "editor/context": [
         {
-          "command": "forgecode.startNewForgeSession",
+          "submenu": "forgecode.forgeSubmenu",
+          "group": "navigation",
+          "when": "editorIsOpen"
+        }
+      ],
+      "explorer/context": [
+        {
+          "submenu": "forgecode.forgeSubmenu",
           "group": "navigation"
+        }
+      ],
+      "forgecode.forgeSubmenu": [
+        {
+          "command": "forgecode.startNewForgeSession",
+          "group": "1_session"
         },
         {
           "command": "forgecode.copyFileReferenceAbsolute",
-          "group": "9_cutcopypaste",
-          "when": "editorIsOpen"
+          "group": "2_copy"
         },
         {
           "command": "forgecode.copyFileReferenceRelative",
-          "group": "9_cutcopypaste",
-          "when": "editorIsOpen"
+          "group": "2_copy"
         }
       ]
     },
@@ -170,11 +188,24 @@
     "keybindings": [
       {
         "command": "forgecode.copyFileReference",
-        "title": "Copy File Reference",
         "key": "ctrl+u",
         "mac": "ctrl+u",
         "win": "ctrl+u",
         "linux": "ctrl+u"
+      },
+      {
+        "command": "forgecode.copyFileReferenceAbsolute",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a",
+        "win": "ctrl+shift+a",
+        "linux": "ctrl+shift+a"
+      },
+      {
+        "command": "forgecode.copyFileReferenceRelative",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "win": "ctrl+shift+r",
+        "linux": "ctrl+shift+r"
       }
     ]
   },
