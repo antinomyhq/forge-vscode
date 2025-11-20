@@ -34,10 +34,10 @@ export class TerminalService {
       name: TERMINAL_NAME,
       iconPath: {
         light: vscode.Uri.file(
-          this.context.asAbsolutePath("images/favicon-dark.svg")
+          this.context.asAbsolutePath("images/forgecode-icon-dark.svg")
         ),
         dark: vscode.Uri.file(
-          this.context.asAbsolutePath("images/favicon-light.svg")
+          this.context.asAbsolutePath("images/forgecode-icon-light.svg")
         ),
       },
       location: {
