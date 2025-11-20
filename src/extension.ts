@@ -37,14 +37,39 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
     vscode.commands.registerCommand(
       "forgecode.copyFileReferenceAbsolute",
-      () => commandService.copyFileReferenceWithFormat("absolute")
+      async (uri?: vscode.Uri) => {
+        // Context menu provides URI; keyboard shortcut uses clipboard trick
+        uri ??= await getExplorerSelection();
+        return commandService.copyFileReferenceWithFormat("absolute", uri);
+      }
     ),
     vscode.commands.registerCommand(
       "forgecode.copyFileReferenceRelative",
-      () => commandService.copyFileReferenceWithFormat("relative")
+      async (uri?: vscode.Uri) => {
+        uri ??= await getExplorerSelection();
+        return commandService.copyFileReferenceWithFormat("relative", uri);
+      }
     ),
     terminalService.getTerminalChangeDisposable()
   );
+}
+
+// Get explorer selection via clipboard trick for keyboard shortcuts
+async function getExplorerSelection(): Promise<vscode.Uri | undefined> {
+  try {
+    // Use VS Code's copyFilePath to get selected file/folder path
+    await vscode.commands.executeCommand("copyFilePath");
+    const filePath = await vscode.env.clipboard.readText();
+
+    // Clipboard will be overwritten by the command, so no need to restore
+    if (filePath) {
+      return vscode.Uri.file(filePath);
+    }
+  } catch {
+    // Nothing selected in explorer, fallback to active editor
+  }
+
+  return undefined;
 }
 
 export function deactivate(): void {
