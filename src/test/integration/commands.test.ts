@@ -319,6 +319,7 @@ suite('Integration Tests', () => {
 
         // Clean up
         await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+    });
 
     test('Generate commit message command should be registered', async () => {
         const commands = await vscode.commands.getCommands();
