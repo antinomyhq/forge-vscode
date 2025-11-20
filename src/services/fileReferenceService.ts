@@ -6,33 +6,44 @@ import { ConfigService } from "./configService";
 export class FileReferenceService {
   constructor(private configService: ConfigService) {}
 
-  // Generate file reference for active editor
-  getFileReference(format?: "absolute" | "relative"): string | undefined {
+  // Generate file reference: @[path] or @[path:start:end]
+  getFileReference(format?: "absolute" | "relative", uri?: vscode.Uri): string | undefined {
     const activeEditor = vscode.window.activeTextEditor;
-    if (!activeEditor) {
-      return;
-    }
 
-    const document = activeEditor.document;
-    const filePath = getFilePathWithFormat(
-      document.uri,
-      format,
-      this.configService
-    );
+    // URI provided (context menu or keyboard shortcut with explorer selection)
+    if (uri) {
+      const filePath = getFilePathWithFormat(uri, format, this.configService);
 
-    const selection = activeEditor.selection;
+      // Include line numbers if URI matches active editor with selection
+      if (activeEditor &&
+          activeEditor.document.uri.toString() === uri.toString() &&
+          !activeEditor.selection.isEmpty) {
+        const startLine = activeEditor.selection.start.line + 1;
+        const endLine = activeEditor.selection.end.line + 1;
+        return `@[${filePath}:${startLine}:${endLine}]`;
+      }
 
-    // if no selection, return the file path in formatted form
-    if (selection.isEmpty) {
       return `@[${filePath}]`;
     }
 
-    // Get line numbers (1-based)
-    const startLine = activeEditor.selection.start.line + 1;
-    const endLine = activeEditor.selection.end.line + 1;
+    // No URI (keyboard shortcut fallback)
+    if (activeEditor) {
+      const filePath = getFilePathWithFormat(
+        activeEditor.document.uri,
+        format,
+        this.configService
+      );
 
-    // Always return file reference without symbol name
-    return `@[${filePath}:${startLine}:${endLine}]`;
+      if (activeEditor.selection.isEmpty) {
+        return `@[${filePath}]`;
+      }
+
+      const startLine = activeEditor.selection.start.line + 1;
+      const endLine = activeEditor.selection.end.line + 1;
+      return `@[${filePath}:${startLine}:${endLine}]`;
+    }
+
+    return;
   }
 }
 

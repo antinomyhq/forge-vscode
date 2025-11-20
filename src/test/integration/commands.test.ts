@@ -201,6 +201,126 @@ suite('Integration Tests', () => {
         }
     });
 
+    test('Copy absolute path command should work with URI parameter', async function() {
+        this.timeout(3000);
+
+        // Create a test document
+        const doc = await vscode.workspace.openTextDocument({
+            content: 'test content\nline 2\nline 3',
+            language: 'typescript'
+        });
+        await vscode.window.showTextDocument(doc);
+
+        // Execute command with URI parameter (simulating context menu)
+        try {
+            await vscode.commands.executeCommand('forgecode.copyFileReferenceAbsolute', doc.uri);
+
+            // Verify clipboard contains file reference
+            const clipboardContent = await vscode.env.clipboard.readText();
+            assert.ok(clipboardContent.includes('@['), 'Clipboard should contain file reference with @[ prefix');
+            assert.ok(clipboardContent.includes(']'), 'Clipboard should contain file reference with ] suffix');
+        } catch (error) {
+            assert.fail(`Command should execute without errors: ${error}`);
+        }
+
+        // Clean up
+        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+    });
+
+    test('Copy relative path command should work with URI parameter', async function() {
+        this.timeout(3000);
+
+        // Create a test document
+        const doc = await vscode.workspace.openTextDocument({
+            content: 'test content\nline 2\nline 3',
+            language: 'typescript'
+        });
+        await vscode.window.showTextDocument(doc);
+
+        // Execute command with URI parameter (simulating context menu)
+        try {
+            await vscode.commands.executeCommand('forgecode.copyFileReferenceRelative', doc.uri);
+
+            // Verify clipboard contains file reference
+            const clipboardContent = await vscode.env.clipboard.readText();
+            assert.ok(clipboardContent.includes('@['), 'Clipboard should contain file reference with @[ prefix');
+            assert.ok(clipboardContent.includes(']'), 'Clipboard should contain file reference with ] suffix');
+        } catch (error) {
+            assert.fail(`Command should execute without errors: ${error}`);
+        }
+
+        // Clean up
+        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+    });
+
+    test('Copy command with selection should include line numbers', async function() {
+        this.timeout(3000);
+
+        // Create a test document
+        const doc = await vscode.workspace.openTextDocument({
+            content: 'line 1\nline 2\nline 3\nline 4\nline 5',
+            language: 'typescript'
+        });
+        const editor = await vscode.window.showTextDocument(doc);
+
+        // Select lines 2-4 (0-based: lines 1-3)
+        editor.selection = new vscode.Selection(
+            new vscode.Position(1, 0),
+            new vscode.Position(3, 6)
+        );
+
+        // Execute command with URI (simulating editor context menu)
+        try {
+            await vscode.commands.executeCommand('forgecode.copyFileReferenceAbsolute', doc.uri);
+
+            // Verify clipboard contains line numbers
+            const clipboardContent = await vscode.env.clipboard.readText();
+            assert.ok(clipboardContent.includes(':'), 'Clipboard should contain line numbers with : separator');
+
+            // Should include line numbers (1-based: 2:4)
+            assert.ok(clipboardContent.match(/:\d+:\d+\]/), 'Clipboard should contain line range in format :start:end]');
+        } catch (error) {
+            assert.fail(`Command should execute without errors: ${error}`);
+        }
+
+        // Clean up
+        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+    });
+
+    test('Copy command without selection should not include line numbers', async function() {
+        this.timeout(3000);
+
+        // Create a test document
+        const doc = await vscode.workspace.openTextDocument({
+            content: 'line 1\nline 2\nline 3',
+            language: 'typescript'
+        });
+        const editor = await vscode.window.showTextDocument(doc);
+
+        // Ensure no selection (cursor at position 0,0)
+        editor.selection = new vscode.Selection(
+            new vscode.Position(0, 0),
+            new vscode.Position(0, 0)
+        );
+
+        // Execute command with URI (simulating editor context menu without selection)
+        try {
+            await vscode.commands.executeCommand('forgecode.copyFileReferenceAbsolute', doc.uri);
+
+            // Verify clipboard does NOT contain line numbers
+            const clipboardContent = await vscode.env.clipboard.readText();
+            assert.ok(clipboardContent.includes('@['), 'Clipboard should contain file reference');
+
+            // Should NOT include line numbers (just @[path])
+            assert.ok(!clipboardContent.match(/:\d+:\d+\]/), 'Clipboard should NOT contain line numbers when no selection');
+        } catch (error) {
+            assert.fail(`Command should execute without errors: ${error}`);
+        }
+
+        // Clean up
+        await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+    });
+
     test('Generate commit message command should be registered', async () => {
         const commands = await vscode.commands.getCommands();
         const generateCommandExists = commands.includes('forgecode.generateCommitMessage');

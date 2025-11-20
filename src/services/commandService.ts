@@ -195,11 +195,12 @@ export class CommandService {
     }
   }
 
-  // Copy file reference with specific format (for context menu commands)
+  // Copy file/folder reference with absolute or relative path
   async copyFileReferenceWithFormat(
-    format: "absolute" | "relative"
+    format: "absolute" | "relative",
+    uri?: vscode.Uri
   ): Promise<void> {
-    const fileRef = this.fileReferenceService.getFileReference(format);
+    const fileRef = this.fileReferenceService.getFileReference(format, uri);
     if (fileRef === undefined) {
       this.notificationService.showNotificationIfEnabled(
         NO_FILE_FOUND_MESSAGE,
@@ -208,13 +209,24 @@ export class CommandService {
       return;
     }
 
-    // Always just copy to clipboard for context menu commands
     await vscode.env.clipboard.writeText(fileRef);
 
+    const isFolder = uri ? await this.isDirectory(uri) : false;
+    const resourceType = isFolder ? "Folder" : "File";
     const formatLabel = format === "absolute" ? "absolute" : "relative";
+
     this.notificationService.showCopyReferenceInActivityBar(
-      `File reference (${formatLabel} path) copied to clipboard`
+      `${resourceType} reference (${formatLabel} path) copied to clipboard`
     );
+  }
+
+  private async isDirectory(uri: vscode.Uri): Promise<boolean> {
+    try {
+      const stat = await vscode.workspace.fs.stat(uri);
+      return stat.type === vscode.FileType.Directory;
+    } catch {
+      return false;
+    }
   }
 
   // Generate commit message using Forge AI
