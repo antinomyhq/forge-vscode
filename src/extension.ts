@@ -8,59 +8,70 @@ import { ProcessService } from "./services/processService";
 import { TerminalService } from "./services/terminalService";
 
 let notificationService: NotificationService | null = null;
+let terminalService: TerminalService | null = null;
+let processService: ProcessService | null = null;
 
 export function activate(context: vscode.ExtensionContext): void {
   // Initialize services
   const configService = new ConfigService();
-  const processService = new ProcessService();
+  const localProcessService = new ProcessService();
   const fileReferenceService = new FileReferenceService(configService);
   const localNotificationService = new NotificationService(configService);
-  const terminalService = new TerminalService(context, configService);
+  const localTerminalService = new TerminalService(context, configService);
   const gitService = new GitService();
   const commandService = new CommandService(
     configService,
-    processService,
+    localProcessService,
     fileReferenceService,
     localNotificationService,
-    terminalService,
+    localTerminalService,
     gitService
   );
 
+  // Store services for cleanup
   notificationService = localNotificationService;
+  terminalService = localTerminalService;
+  processService = localProcessService;
 
   // Register commands
   context.subscriptions.push(
-    vscode.commands.registerCommand(
-      "forgecode.startNewForgeSession",
-      () => commandService.startNewForgeSession()
+    vscode.commands.registerCommand("forgecode.startNewForgeSession", () =>
+      commandService.startNewForgeSession()
     ),
-    vscode.commands.registerCommand(
-      "forgecode.copyFileReference",
-      () => commandService.copyFileReference()
+    vscode.commands.registerCommand("forgecode.copyFileReference", () =>
+      commandService.copyFileReference()
     ),
-    vscode.commands.registerCommand(
-      "forgecode.copyFileReferenceAbsolute",
-      () => commandService.copyFileReferenceWithFormat("absolute")
+    vscode.commands.registerCommand("forgecode.copyFileReferenceAbsolute", () =>
+      commandService.copyFileReferenceWithFormat("absolute")
     ),
-    vscode.commands.registerCommand(
-      "forgecode.copyFileReferenceRelative",
-      () => commandService.copyFileReferenceWithFormat("relative")
+    vscode.commands.registerCommand("forgecode.copyFileReferenceRelative", () =>
+      commandService.copyFileReferenceWithFormat("relative")
     ),
-    vscode.commands.registerCommand(
-      "forgecode.generateCommitMessage",
-      () => commandService.generateCommitMessage()
+    vscode.commands.registerCommand("forgecode.generateCommitMessage", () =>
+      commandService.generateCommitMessage()
     ),
     vscode.commands.registerCommand(
       "forgecode.stopCommitMessageGeneration",
       () => commandService.stopCommitMessageGeneration()
     ),
-    terminalService.getTerminalChangeDisposable()
+    localTerminalService.getTerminalChangeDisposable()
   );
 }
 
 export function deactivate(): void {
+  // Clean up all services
   if (notificationService) {
     notificationService.dispose();
     notificationService = null;
+  }
+
+  if (terminalService) {
+    terminalService.dispose();
+    terminalService = null;
+  }
+
+  if (processService) {
+    processService.stopCommitMessageProcess();
+    processService = null;
   }
 }
