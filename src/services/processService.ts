@@ -46,7 +46,7 @@ export class ProcessService {
 
     const forgeProcess = spawn(forgePath, args, {
       cwd: workingDir,
-      shell: false,
+      shell: true,
       windowsHide: true,
       stdio: ["ignore", "pipe", "pipe"],
     });

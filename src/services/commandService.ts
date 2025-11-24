@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import {
   CLIPBOARD_MESSAGE,
-  COMMIT_MESSAGE_GENERATION_FAILED,
   COMMIT_MESSAGE_GENERATION_STOPPED,
   FILE_REFERENCE_COPIED_MESSAGE,
   FILE_REFERENCE_WILL_BE_PASTED_MESSAGE,
@@ -334,11 +333,12 @@ export class CommandService {
     }
 
     // Success - parse and set commit message
-    let commitMessage = stdout.trim();
+    const output = stdout.trim();
+    const errorOutput = stderr.trim();
 
-    // Check if Forge CLI returned an error message (e.g., "⏺ [13:35:10] ERROR: No changes to commit")
-    if (commitMessage.includes("ERROR:")) {
-      const errorMatch = commitMessage.match(/ERROR:\s*(.+)/);
+    // Check if Forge CLI returned an error message in stdout (e.g., "⏺ [13:35:10] ERROR: No changes to commit")
+    if (output.includes("ERROR:")) {
+      const errorMatch = output.match(/ERROR:\s*(.+)/);
       const errorMessage = errorMatch ? errorMatch[1].trim() : "Failed to generate commit message";
 
       this.notificationService.showNotificationIfEnabled(
@@ -349,7 +349,21 @@ export class CommandService {
       return;
     }
 
+    // Check if there's an error message in stderr (even with exit code 0)
+    if (errorOutput.includes("ERROR:")) {
+      const errorMatch = errorOutput.match(/ERROR:\s*(.+)/);
+      const errorMessage = errorMatch ? errorMatch[1].trim() : errorOutput;
+
+      this.notificationService.showNotificationIfEnabled(
+        errorMessage,
+        "warning"
+      );
+      resolve();
+      return;
+    }
+
     // Strip the Forge CLI prefix (e.g., "⏺ [21:48:59] Generated commit message:")
+    let commitMessage = output;
     const lines = commitMessage.split("\n");
     if (lines.length > 0 && lines[0].includes("Generated commit message:")) {
       commitMessage = lines.slice(1).join("\n").trim();
@@ -357,8 +371,11 @@ export class CommandService {
 
     // Check if commit message is empty
     if (!commitMessage) {
+      // If stderr has content, show it; otherwise show a user-friendly message
+      const errorMessage = errorOutput || "No changes detected to generate commit message";
+
       this.notificationService.showNotificationIfEnabled(
-        COMMIT_MESSAGE_GENERATION_FAILED,
+        errorMessage,
         "warning"
       );
       resolve();
@@ -366,7 +383,7 @@ export class CommandService {
     }
 
     // Set the commit message in SCM input box
-    this.gitService.setCommitMessage(commitMessage);
+    void this.gitService.setCommitMessage(commitMessage);
     resolve();
   }
 
