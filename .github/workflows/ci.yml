@@ -33,7 +33,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -60,7 +60,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -86,7 +86,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -114,7 +114,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -184,7 +184,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20.x
-          cache: 'npm'
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -192,18 +192,45 @@ jobs:
       - name: Update package.json version
         run: |
           VERSION="${{ needs.release_drafter.outputs.tag_name }}"
-          VERSION="${VERSION#v}"  # Remove 'v' prefix
+          VERSION="${VERSION#v}"
           npm version "$VERSION" --no-git-tag-version
 
       - name: Publish to VS Code Marketplace
-        uses: HaaLeo/publish-vscode-extension@v2
-        with:
-          pat: ${{ secrets.VSCE_PAT }}
-          registryUrl: https://marketplace.visualstudio.com
+        id: publish
+        continue-on-error: true
+        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
 
+      - name: Retry with incremented version on conflict
+        if: steps.publish.outcome == 'failure'
+        run: |
+          echo "⚠️ First publish attempt failed. Checking if it's a version conflict..."
+          VERSION="${{ needs.release_drafter.outputs.tag_name }}"
+          VERSION="${VERSION#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+          PUBLISHED=false
+          for i in {1..20}; do
+            PATCH=$((PATCH + 1))
+            NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+            echo "🔄 Trying version $NEW_VERSION..."
+            npm version "$NEW_VERSION" --no-git-tag-version
+
+            if npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }} 2>&1; then
+              echo "✅ Published successfully as $NEW_VERSION"
+              echo "NEW_TAG=v$NEW_VERSION" >> $GITHUB_ENV
+              PUBLISHED=true
+              break
+            fi
+          done
+
+          if [ "$PUBLISHED" = false ]; then
+            echo "❌ Failed to publish after 20 attempts"
+            exit 1
+          fi
 
       - name: Publish GitHub Release
-        run: gh release edit ${{ needs.release_drafter.outputs.tag_name }} --draft=false
+        run: |
+          TAG="${NEW_TAG:-${{ needs.release_drafter.outputs.tag_name }}}"
+          gh release edit ${{ needs.release_drafter.outputs.tag_name }} --tag "$TAG" --draft=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
