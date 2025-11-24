@@ -189,48 +189,76 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Update package.json version
+      - name: Install vsce and jq
         run: |
-          VERSION="${{ needs.release_drafter.outputs.tag_name }}"
-          VERSION="${VERSION#v}"
-          npm version "$VERSION" --no-git-tag-version
+          npm install -g @vscode/vsce
+          sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Publish to VS Code Marketplace
-        id: publish
-        continue-on-error: true
-        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
-
-      - name: Retry with incremented version on conflict
-        if: steps.publish.outcome == 'failure'
+      - name: Choose next free version from Marketplace
+        env:
+          EXTENSION_ID: ForgeCode.forge-vscode
         run: |
-          echo "⚠️ First publish attempt failed. Checking if it's a version conflict..."
-          VERSION="${{ needs.release_drafter.outputs.tag_name }}"
-          VERSION="${VERSION#v}"
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          set -e
 
-          PUBLISHED=false
-          for i in {1..20}; do
-            PATCH=$((PATCH + 1))
-            NEW_VERSION="$MAJOR.$MINOR.$PATCH"
-            echo "🔄 Trying version $NEW_VERSION..."
-            npm version "$NEW_VERSION" --no-git-tag-version
+          # Base version from Release Drafter tag, e.g. v0.10.1 -> 0.10.1
+          BASE_VERSION="${{ needs.release_drafter.outputs.tag_name }}"
+          BASE_VERSION="${BASE_VERSION#v}"
 
-            if npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }} 2>&1; then
-              echo "✅ Published successfully as $NEW_VERSION"
-              echo "NEW_TAG=v$NEW_VERSION" >> $GITHUB_ENV
-              PUBLISHED=true
-              break
+          echo "Requested version from tag: $BASE_VERSION"
+
+          # Split into parts
+          IFS='.' read -r BASE_MAJOR BASE_MINOR BASE_PATCH <<< "$BASE_VERSION"
+          BASE_MAJOR=${BASE_MAJOR:-0}
+          BASE_MINOR=${BASE_MINOR:-0}
+          BASE_PATCH=${BASE_PATCH:-0}
+
+          # Get all existing versions from Marketplace (if any)
+          EXISTING_VERSIONS=$(vsce show "$EXTENSION_ID" --json 2>/dev/null | jq -r '.versions[].version' || echo "")
+
+          if [ -n "$EXISTING_VERSIONS" ]; then
+            echo "Existing versions on Marketplace:"
+            echo "$EXISTING_VERSIONS" | sed 's/^/  - /'
+          else
+            echo "No versions found on Marketplace (new extension or fetch failed)."
+          fi
+
+          # Start with the base version
+          CURRENT_MAJOR="$BASE_MAJOR"
+          CURRENT_MINOR="$BASE_MINOR"
+          CURRENT_PATCH="$BASE_PATCH"
+          CURRENT_VERSION="${CURRENT_MAJOR}.${CURRENT_MINOR}.${CURRENT_PATCH}"
+
+          # If that version exists, bump patch until we find a free one
+          # Put a high safety cap in case of some weird infinite loop scenario
+          ATTEMPTS=0
+          MAX_ATTEMPTS=2000
+
+          while echo "$EXISTING_VERSIONS" | grep -qx "$CURRENT_VERSION"; do
+            ATTEMPTS=$((ATTEMPTS + 1))
+            if [ "$ATTEMPTS" -gt "$MAX_ATTEMPTS" ]; then
+              echo "❌ Could not find a free version after $MAX_ATTEMPTS attempts."
+              exit 1
             fi
+
+            CURRENT_PATCH=$((CURRENT_PATCH + 1))
+            CURRENT_VERSION="${CURRENT_MAJOR}.${CURRENT_MINOR}.${CURRENT_PATCH}"
+            echo "Version already exists, trying $CURRENT_VERSION..."
           done
 
-          if [ "$PUBLISHED" = false ]; then
-            echo "❌ Failed to publish after 20 attempts"
-            exit 1
-          fi
+          echo "✅ Using version: $CURRENT_VERSION"
+          npm version "$CURRENT_VERSION" --no-git-tag-version
+
+          # Export NEW_TAG so next step can use it
+          echo "NEW_TAG=v$CURRENT_VERSION" >> $GITHUB_ENV
+
+      - name: Publish to VS Code Marketplace
+        run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
 
       - name: Publish GitHub Release
         run: |
+          # Use NEW_TAG if we had to bump; otherwise fall back to the original tag
           TAG="${NEW_TAG:-${{ needs.release_drafter.outputs.tag_name }}}"
+          echo "Updating GitHub release tag to $TAG and marking as non-draft"
           gh release edit ${{ needs.release_drafter.outputs.tag_name }} --tag "$TAG" --draft=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
