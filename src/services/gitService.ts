@@ -18,20 +18,28 @@ interface Repository {
 export class GitService {
   private gitExtension: GitExtension | undefined;
   private git: GitAPI | undefined;
+  private initialized = false;
 
-  constructor() {
-    this.initializeGitExtension();
-  }
+  constructor() {}
+  private ensureGitExtension(): void {
+    if (this.initialized) {
+      return;
+    }
 
-  // Initialize Git extension
-  private initializeGitExtension(): void {
-    this.gitExtension = vscode.extensions.getExtension<GitExtension>("vscode.git")?.exports;
+    this.gitExtension =
+      vscode.extensions.getExtension<GitExtension>("vscode.git")?.exports;
     this.git = this.gitExtension?.getAPI(1);
+    this.initialized = true;
   }
 
   // Get the first Git repository
   getRepository(): Repository | null {
-    if (this.git?.repositories === undefined || this.git.repositories.length === 0) {
+    this.ensureGitExtension();
+
+    if (
+      this.git?.repositories === undefined ||
+      this.git.repositories.length === 0
+    ) {
       return null;
     }
     return this.git.repositories[0];
@@ -44,6 +52,7 @@ export class GitService {
 
   // Check if Git is available
   isGitAvailable(): boolean {
+    this.ensureGitExtension();
     return this.git !== undefined;
   }
 
@@ -55,4 +64,3 @@ export class GitService {
     }
   }
 }
-
