@@ -48,8 +48,8 @@
         "command": "forgecode.startNewForgeSession",
         "title": "Start New Forge Session",
         "icon": {
-          "light": "images/favicon-dark.svg",
-          "dark": "images/favicon-light.svg"
+          "light": "images/forgecode-icon-dark.svg",
+          "dark": "images/forgecode-icon-light.svg"
         }
       },
       {
