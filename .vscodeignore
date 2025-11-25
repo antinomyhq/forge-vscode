@@ -72,3 +72,7 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 node_modules/**
+
+
+# Large documentation assets (referenced via URL in README)
+images/demo.gif
