@@ -28,3 +28,10 @@ export const NO_WORKSPACE_MESSAGE =
 
 export const NO_GIT_REPO_MESSAGE =
   "No Git repository found. Please initialize a Git repository to use this feature.";
+
+export const MIN_FORGE_VERSION_FOR_COMMIT = "1.5.0";
+
+export const FORGE_VERSION_OUTDATED_MESSAGE =
+  "AI commit message generation requires Forge v1.5.0 or above.";
+
+export const FORGE_NOT_INSTALLED_MESSAGE = "Forge CLI is not installed.";
