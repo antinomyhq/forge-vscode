@@ -4,7 +4,10 @@ import {
   COMMIT_MESSAGE_GENERATION_STOPPED,
   FILE_REFERENCE_COPIED_MESSAGE,
   FILE_REFERENCE_WILL_BE_PASTED_MESSAGE,
+  FORGE_NOT_INSTALLED_MESSAGE,
   FORGE_STARTING_MESSAGE,
+  FORGE_VERSION_OUTDATED_MESSAGE,
+  MIN_FORGE_VERSION_FOR_COMMIT,
   NEW_FORGE_SESSION_MESSAGE,
   NO_FILE_FOUND_MESSAGE,
   NO_GIT_REPO_MESSAGE,
@@ -111,8 +114,17 @@ export class CommandService {
     }
 
     // Scenario 2: Both external and internal Forge processes detected
-    if (this.hasBothExternalAndInternal(externalRunning, targetForgeTerminal, totalForgeProcesses, forgeTerminals)) {
-      this.notificationService.showCopyReferenceInActivityBar(CLIPBOARD_MESSAGE);
+    if (
+      this.hasBothExternalAndInternal(
+        externalRunning,
+        targetForgeTerminal,
+        totalForgeProcesses,
+        forgeTerminals
+      )
+    ) {
+      this.notificationService.showCopyReferenceInActivityBar(
+        CLIPBOARD_MESSAGE
+      );
       return;
     }
 
@@ -124,7 +136,7 @@ export class CommandService {
 
     // Scenario 4: No Forge terminal in VS Code and no external Forge
     if (externalRunning === false && forgeTerminals.length === 0) {
-      this.handleNoTerminalScenario(fileRef);
+      await this.handleNoTerminalScenario(fileRef);
       return;
     }
 
@@ -149,7 +161,10 @@ export class CommandService {
   }
 
   // Handle scenario where single Forge terminal exists
-  private handleSingleTerminalScenario(terminal: vscode.Terminal, fileRef: string): void {
+  private handleSingleTerminalScenario(
+    terminal: vscode.Terminal,
+    fileRef: string
+  ): void {
     terminal.show();
     const autoPaste = this.configService.getAutoPasteEnabled();
 
@@ -162,11 +177,33 @@ export class CommandService {
   }
 
   // Handle scenario where no Forge terminal exists
-  private handleNoTerminalScenario(fileRef: string): void {
+  private async handleNoTerminalScenario(fileRef: string): Promise<void> {
+    // Check if Forge is installed before trying to start it
+    const forgeVersion = await this.processService.getForgeVersion();
+
+    if (forgeVersion === null) {
+      // Forge not installed - always show installation prompt
+      const action = await vscode.window.showErrorMessage(
+        FORGE_NOT_INSTALLED_MESSAGE,
+        "Install Forge"
+      );
+
+      if (action === "Install Forge") {
+        await this.installForge();
+      }
+      return;
+    }
+
+    // Forge is installed - proceed normally
     const terminal = this.terminalService.createForgeTerminal();
     this.terminalService.startForgeWithAutoPaste(terminal, fileRef);
-    this.notificationService.showNotificationIfEnabled("New Forge terminal created.", "info");
-    this.notificationService.showCopyReferenceInActivityBar(FILE_REFERENCE_WILL_BE_PASTED_MESSAGE);
+    this.notificationService.showNotificationIfEnabled(
+      "New Forge terminal created.",
+      "info"
+    );
+    this.notificationService.showCopyReferenceInActivityBar(
+      FILE_REFERENCE_WILL_BE_PASTED_MESSAGE
+    );
   }
 
   // Handle scenario where Forge is running externally
@@ -181,7 +218,8 @@ export class CommandService {
         `Forge is running in an external terminal. File reference copied - paste it there to continue.`,
         {
           modal: false,
-          detail: "You can continue in the external terminal or launch Forge inside VS Code.",
+          detail:
+            "You can continue in the external terminal or launch Forge inside VS Code.",
         },
         "Launch Forge Inside VSCode"
       );
@@ -231,7 +269,41 @@ export class CommandService {
       // Validate Git repository
       const repository = this.gitService.getRepository();
       if (repository === null) {
-        this.notificationService.showNotificationIfEnabled(NO_GIT_REPO_MESSAGE, "error");
+        this.notificationService.showNotificationIfEnabled(
+          NO_GIT_REPO_MESSAGE,
+          "error"
+        );
+        return;
+      }
+
+      // Check Forge version before proceeding
+      const forgeVersion = await this.processService.getForgeVersion(forgePath);
+
+      // No version = Forge not installed
+      if (forgeVersion === null) {
+        const action = await vscode.window.showErrorMessage(
+          FORGE_NOT_INSTALLED_MESSAGE,
+          "Install Forge"
+        );
+
+        if (action === "Install Forge") {
+          await this.installForge();
+        }
+        return;
+      }
+
+      // Version < 1.5.0 = Outdated
+      if (
+        this.compareVersions(forgeVersion, MIN_FORGE_VERSION_FOR_COMMIT) < 0
+      ) {
+        const action = await vscode.window.showWarningMessage(
+          `${FORGE_VERSION_OUTDATED_MESSAGE} (Current: ${forgeVersion}, Required: ${MIN_FORGE_VERSION_FOR_COMMIT}+)`,
+          "Update to Latest Version"
+        );
+
+        if (action === "Update to Latest Version") {
+          await this.updateToLatestVersion();
+        }
         return;
       }
 
@@ -239,10 +311,17 @@ export class CommandService {
       await vscode.commands.executeCommand("setContext", "forge.generatingCommitMessage", true);
 
       try {
-        await this.runCommitMessageGeneration(forgePath, maxDiffSize, workingDir);
+        await this.runCommitMessageGeneration(
+          forgePath,
+          maxDiffSize,
+          workingDir
+        );
       } catch (error) {
         await this.clearCommitMessageGenerationState();
-        throw error;
+        this.notificationService.showNotificationIfEnabled(
+          `Error generating commit message: ${error}`,
+          "error"
+        );
       }
     } catch (error) {
       this.notificationService.showNotificationIfEnabled(
@@ -317,7 +396,10 @@ export class CommandService {
 
     // If process was killed by signal (user stopped it)
     if (signal !== null) {
-      this.notificationService.showNotificationIfEnabled(COMMIT_MESSAGE_GENERATION_STOPPED, "info");
+      this.notificationService.showNotificationIfEnabled(
+        COMMIT_MESSAGE_GENERATION_STOPPED,
+        "info"
+      );
       resolve();
       return;
     }
@@ -339,20 +421,9 @@ export class CommandService {
     // Check if Forge CLI returned an error message in stdout (e.g., "⏺ [13:35:10] ERROR: No changes to commit")
     if (output.includes("ERROR:")) {
       const errorMatch = output.match(/ERROR:\s*(.+)/);
-      const errorMessage = errorMatch ? errorMatch[1].trim() : "Failed to generate commit message";
-
-      this.notificationService.showNotificationIfEnabled(
-        errorMessage,
-        "warning"
-      );
-      resolve();
-      return;
-    }
-
-    // Check if there's an error message in stderr (even with exit code 0)
-    if (errorOutput.includes("ERROR:")) {
-      const errorMatch = errorOutput.match(/ERROR:\s*(.+)/);
-      const errorMessage = errorMatch ? errorMatch[1].trim() : errorOutput;
+      const errorMessage = errorMatch
+        ? errorMatch[1].trim()
+        : "Failed to generate commit message";
 
       this.notificationService.showNotificationIfEnabled(
         errorMessage,
@@ -372,7 +443,8 @@ export class CommandService {
     // Check if commit message is empty
     if (!commitMessage) {
       // If stderr has content, show it; otherwise show a user-friendly message
-      const errorMessage = errorOutput || "No changes detected to generate commit message";
+      const errorMessage =
+        errorOutput || "No changes detected to generate commit message";
 
       this.notificationService.showNotificationIfEnabled(
         errorMessage,
@@ -390,12 +462,68 @@ export class CommandService {
   // Clear commit message generation state
   private async clearCommitMessageGenerationState(): Promise<void> {
     this.processService.clearCommitMessageProcess();
-    await vscode.commands.executeCommand("setContext", "forge.generatingCommitMessage", false);
+    await vscode.commands.executeCommand(
+      "setContext",
+      "forge.generatingCommitMessage",
+      false
+    );
   }
 
   // Stop commit message generation
   async stopCommitMessageGeneration(): Promise<void> {
     this.processService.stopCommitMessageProcess();
   }
-}
 
+  // Install Forge (runs npm install -g forgecode@latest)
+  async installForge(): Promise<void> {
+    const terminal = vscode.window.createTerminal({
+      name: "Install Forge",
+      hideFromUser: false,
+    });
+
+    terminal.show();
+    terminal.sendText("npm install -g forgecode@latest", true);
+
+    this.notificationService.showNotificationIfEnabled(
+      "Installing Forge...",
+      "info"
+    );
+  }
+
+  // Update to latest version (runs npm install -g forgecode@latest)
+  async updateToLatestVersion(): Promise<void> {
+    const terminal = vscode.window.createTerminal({
+      name: "Update Forge",
+      hideFromUser: false,
+    });
+
+    terminal.show();
+    terminal.sendText("npm install -g forgecode@latest", true);
+
+    this.notificationService.showNotificationIfEnabled(
+      "Updating Forge to the latest version...",
+      "info"
+    );
+  }
+
+  // Simple semantic version comparison (e.g., "1.4.0" vs "1.5.0")
+  private compareVersions(version1: string, version2: string): number {
+    const v1Parts = version1.split(".").map((n) => parseInt(n, 10));
+    const v2Parts = version2.split(".").map((n) => parseInt(n, 10));
+
+    for (let i = 0; i < 3; i++) {
+      // eslint-disable-next-line security/detect-object-injection
+      const v1 = v1Parts[i] ?? 0;
+      // eslint-disable-next-line security/detect-object-injection
+      const v2 = v2Parts[i] ?? 0;
+
+      if (v1 > v2) {
+        return 1;
+      }
+      if (v1 < v2) {
+        return -1;
+      }
+    }
+    return 0;
+  }
+}
