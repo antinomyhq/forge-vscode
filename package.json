@@ -184,18 +184,12 @@
           "additionalProperties": false,
           "order": 5
         },
-        "forge.showInstallationPrompt": {
-          "type": "boolean",
-          "default": true,
-          "description": "Show installation prompt when Forge is not detected",
-          "order": 6
-        },
         "forge.commitMessage.maxDiffSize": {
           "type": "number",
           "default": 10000,
           "minimum": 10000,
           "description": "Maximum git diff size in bytes for commit message generation (minimum 10000)",
-          "order": 7
+          "order": 6
         }
       }
     },
