@@ -48,8 +48,8 @@
         "command": "forgecode.startNewForgeSession",
         "title": "Start New Forge Session",
         "icon": {
-          "light": "images/favicon-dark.svg",
-          "dark": "images/favicon-light.svg"
+          "light": "images/forgecode-icon-dark.svg",
+          "dark": "images/forgecode-icon-light.svg"
         }
       },
       {
@@ -188,15 +188,15 @@
           "properties": {
             "info": {
               "type": "boolean",
-              "description": "Show informational notifications"
+              "description": "Show informational notifications (e.g., 'New Forge session started', 'Commit message generation stopped')"
             },
             "warning": {
               "type": "boolean",
-              "description": "Show warning notifications"
+              "description": "Show warning notifications (e.g., 'No file found', 'No changes to commit')"
             },
             "error": {
               "type": "boolean",
-              "description": "Show error notifications"
+              "description": "Show error notifications (e.g., 'No Git repository found', 'Failed to generate commit message')"
             }
           },
           "additionalProperties": false,
