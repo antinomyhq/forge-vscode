@@ -54,6 +54,12 @@ export function activate(context: vscode.ExtensionContext): void {
       "forgecode.stopCommitMessageGeneration",
       () => commandService.stopCommitMessageGeneration()
     ),
+    vscode.commands.registerCommand("forgecode.installForge", () =>
+      commandService.installForge()
+    ),
+    vscode.commands.registerCommand("forgecode.updateToLatestVersion", () =>
+      commandService.updateToLatestVersion()
+    ),
     localTerminalService.getTerminalChangeDisposable()
   );
 }
