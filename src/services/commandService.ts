@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as semver from "semver";
 import {
   CLIPBOARD_MESSAGE,
   COMMIT_MESSAGE_GENERATION_STOPPED,
@@ -293,9 +294,7 @@ export class CommandService {
       }
 
       // Version < 1.5.0 = Outdated
-      if (
-        this.compareVersions(forgeVersion, MIN_FORGE_VERSION_FOR_COMMIT) < 0
-      ) {
+      if (semver.lt(forgeVersion, MIN_FORGE_VERSION_FOR_COMMIT) === true) {
         const action = await vscode.window.showWarningMessage(
           `${FORGE_VERSION_OUTDATED_MESSAGE} (Current: ${forgeVersion}, Required: ${MIN_FORGE_VERSION_FOR_COMMIT}+)`,
           "Update to Latest Version"
@@ -504,26 +503,5 @@ export class CommandService {
       "Updating Forge to the latest version...",
       "info"
     );
-  }
-
-  // Simple semantic version comparison (e.g., "1.4.0" vs "1.5.0")
-  private compareVersions(version1: string, version2: string): number {
-    const v1Parts = version1.split(".").map((n) => parseInt(n, 10));
-    const v2Parts = version2.split(".").map((n) => parseInt(n, 10));
-
-    for (let i = 0; i < 3; i++) {
-      // eslint-disable-next-line security/detect-object-injection
-      const v1 = v1Parts[i] ?? 0;
-      // eslint-disable-next-line security/detect-object-injection
-      const v2 = v2Parts[i] ?? 0;
-
-      if (v1 > v2) {
-        return 1;
-      }
-      if (v1 < v2) {
-        return -1;
-      }
-    }
-    return 0;
   }
 }
