@@ -60,14 +60,12 @@ suite('Integration Tests', () => {
         assert.ok(config !== undefined, 'Forge configuration should be accessible');
 
         // Test that default values exist
-        const showInstallationPrompt = config.get('showInstallationPrompt');
         const autoPaste = config.get('autoPaste');
         const pasteDelay = config.get('pasteDelay');
         const openTerminal = config.get('openTerminal');
         const fileReferenceFormat = config.get('fileReferenceFormat');
         const notifications = config.get('notifications');
 
-        assert.ok(typeof showInstallationPrompt === 'boolean', 'showInstallationPrompt should be boolean');
         assert.ok(typeof autoPaste === 'boolean', 'autoPaste should be boolean');
         assert.ok(typeof pasteDelay === 'number', 'pasteDelay should be number');
         assert.ok(typeof openTerminal === 'string', 'openTerminal should be string');
