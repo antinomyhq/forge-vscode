@@ -132,7 +132,6 @@ Access settings via File → Preferences → Settings → Extensions → Forge
 
 ### Available Settings
 
-- **forge.showInstallationPrompt** (default: `true`): Show installation prompt when Forge is not detected
 - **forge.autoPaste** (default: `true`): Automatically paste file references into terminals
 - **forge.pasteDelay** (default: `5000`): Delay in milliseconds to allow Forge to start before auto-pasting file references (only works when autoPaste is enabled)
 - **forge.openTerminal** (default: `once`): Open terminal when copying file references

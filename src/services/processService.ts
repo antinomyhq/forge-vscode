@@ -72,5 +72,48 @@ export class ProcessService {
   isCommitMessageProcessRunning(): boolean {
     return this.currentCommitMessageProcess !== null;
   }
-}
 
+  // Get Forge CLI version (cross-platform)
+  async getForgeVersion(forgePath: string = "forge"): Promise<string | null> {
+    return new Promise((resolve) => {
+      const forgeProcess = spawn(forgePath, ["--version"], {
+        shell: true,
+        windowsHide: true,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+
+      let stdout = "";
+      let stderr = "";
+
+      forgeProcess.stdout?.on("data", (data: Buffer) => {
+        stdout += data.toString();
+      });
+
+      forgeProcess.stderr?.on("data", (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      forgeProcess.on("close", (code: number | null) => {
+        if (code !== 0) {
+          resolve(null);
+          return;
+        }
+
+        // Parse version from output (check both stdout and stderr)
+        const output = stdout || stderr;
+
+        // eslint-disable-next-line security/detect-unsafe-regex
+        const versionMatch = output.trim().match(/(\d+\.\d+\.\d+(?:-[\w.]+)?)/);
+        if (versionMatch) {
+          resolve(versionMatch[1]);
+        } else {
+          resolve(null);
+        }
+      });
+
+      forgeProcess.on("error", () => {
+        resolve(null);
+      });
+    });
+  }
+}
