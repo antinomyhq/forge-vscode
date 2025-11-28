@@ -8,7 +8,7 @@ Seamlessly integrate [Forge Code](https://forgecode.dev) AI assistant into your 
 
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue?logo=visual-studio-code)](https://marketplace.visualstudio.com/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-0.4.0-orange.svg)](package.json)
+[![Version](https://img.shields.io/badge/Version-0.11.0-orange.svg)](package.json)
 
 </div>
 
