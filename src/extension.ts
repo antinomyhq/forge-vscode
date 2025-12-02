@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { ForgeCodeLensProvider } from "./providers/forgeCodeLensProvider";
+import { ForgeCodeLensProvider } from "./providers/forgeCodeLensProvider";
 import { CommandService } from "./services/commandService";
 import { ConfigService } from "./services/configService";
 import { FileReferenceService } from "./services/fileReferenceService";
@@ -8,10 +9,20 @@ import { NotificationService } from "./services/notificationService";
 import { ProcessService } from "./services/processService";
 import { TerminalService } from "./services/terminalService";
 import { BackgroundForgeService } from "./services/backgroundForgeService";
+import { BackgroundForgeService } from "./services/backgroundForgeService";
 
 let notificationService: NotificationService | null = null;
 let terminalService: TerminalService | null = null;
 let processService: ProcessService | null = null;
+let backgroundForgeService: BackgroundForgeService | null = null;
+
+function initializeServices(context: vscode.ExtensionContext): {
+  configService: ConfigService;
+  localNotificationService: NotificationService;
+  localTerminalService: TerminalService;
+  localBackgroundForgeService: BackgroundForgeService;
+  commandService: CommandService;
+} {
 let backgroundForgeService: BackgroundForgeService | null = null;
 
 function initializeServices(context: vscode.ExtensionContext): {
@@ -31,6 +42,10 @@ function initializeServices(context: vscode.ExtensionContext): {
     localNotificationService,
     context
   );
+  const localBackgroundForgeService = new BackgroundForgeService(
+    localNotificationService,
+    context
+  );
   const commandService = new CommandService(
     configService,
     localProcessService,
@@ -39,11 +54,47 @@ function initializeServices(context: vscode.ExtensionContext): {
     localTerminalService,
     gitService,
     localBackgroundForgeService
+    gitService,
+    localBackgroundForgeService
   );
 
   notificationService = localNotificationService;
   terminalService = localTerminalService;
   processService = localProcessService;
+  backgroundForgeService = localBackgroundForgeService;
+
+  return {
+    configService,
+    localNotificationService,
+    localTerminalService,
+    localBackgroundForgeService,
+    commandService,
+  };
+}
+
+function registerCodeLensProvider(
+  context: vscode.ExtensionContext,
+  configService: ConfigService,
+  localBackgroundForgeService: BackgroundForgeService
+): void {
+  const codeLensProvider = new ForgeCodeLensProvider(configService, localBackgroundForgeService);
+  const documentSelector: vscode.DocumentSelector = { scheme: "file" };
+
+  context.subscriptions.push(
+    vscode.languages.registerCodeLensProvider(documentSelector, codeLensProvider),
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (e.affectsConfiguration("forge.codeLens")) {
+        codeLensProvider.refresh();
+      }
+    })
+  );
+}
+
+function registerCommands(
+  context: vscode.ExtensionContext,
+  commandService: CommandService,
+  localTerminalService: TerminalService
+): void {
   backgroundForgeService = localBackgroundForgeService;
 
   return {
@@ -105,6 +156,9 @@ function registerCommands(
     vscode.commands.registerCommand("forgecode.stopCommitMessageGeneration", () =>
       commandService.stopCommitMessageGeneration()
     ),
+    vscode.commands.registerCommand("forgecode.stopCommitMessageGeneration", () =>
+      commandService.stopCommitMessageGeneration()
+    ),
     vscode.commands.registerCommand(
       "forgecode.delegateToForge",
       (context: { uri: vscode.Uri; line: number; lineText: string; tag: string }) =>
@@ -127,6 +181,12 @@ function registerCommands(
     ),
     localTerminalService.getTerminalChangeDisposable()
   );
+}
+
+export function activate(context: vscode.ExtensionContext): void {
+  const services = initializeServices(context);
+  registerCodeLensProvider(context, services.configService, services.localBackgroundForgeService);
+  registerCommands(context, services.commandService, services.localTerminalService);
 }
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -168,6 +228,11 @@ export function deactivate(): void {
   if (processService) {
     processService.stopCommitMessageProcess();
     processService = null;
+  }
+
+  if (backgroundForgeService) {
+    backgroundForgeService.dispose();
+    backgroundForgeService = null;
   }
 
   if (backgroundForgeService) {
