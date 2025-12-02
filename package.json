@@ -31,7 +31,9 @@
   "bugs": {
     "url": "https://github.com/antinomyhq/forge/issues"
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "icons": {
@@ -76,6 +78,27 @@
         "command": "forgecode.stopCommitMessageGeneration",
         "title": "Stop Generating Commit Message",
         "icon": "$(debug-stop)"
+      },
+      {
+        "command": "forgecode.delegateToForge",
+        "title": "Delegate to Forge"
+      },
+      {
+        "command": "forgecode.showBackgroundTasks",
+        "title": "Show Background Tasks",
+        "icon": {
+          "light": "images/forgecode-icon-dark.svg",
+          "dark": "images/forgecode-icon-light.svg"
+        }
+      },
+      {
+        "command": "forgecode.stopAllBackgroundTasks",
+        "title": "Stop All Background Tasks",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "forgecode.stopTask",
+        "title": "Stop Task"
       }
     ],
     "submenus": [
@@ -214,6 +237,27 @@
           "minimum": 10000,
           "description": "Maximum git diff size in bytes for commit message generation (minimum 10000)",
           "order": 7
+        },
+        "forge.codeLens.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show 'Delegate to Forge' CodeLens above TODO/FIXME/BUG comments",
+          "order": 8
+        },
+        "forge.codeLens.patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "TODO",
+            "FIXME",
+            "BUG",
+            "HACK",
+            "NOTE"
+          ],
+          "description": "Comment patterns that trigger 'Delegate to Forge' CodeLens",
+          "order": 9
         }
       }
     },
