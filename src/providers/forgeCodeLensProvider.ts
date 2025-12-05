@@ -56,7 +56,7 @@ export class ForgeCodeLensProvider implements vscode.CodeLensProvider {
           // Show loading indicator with stop button
           lenses.push(
             new vscode.CodeLens(range, {
-              title: "$(sync~spin) Running in background",
+              title: "$(sync~spin)\u00a0Running in background",
               tooltip: "Task is running in the background",
               command: "", // Empty command makes it non-clickable
             }),
@@ -71,7 +71,7 @@ export class ForgeCodeLensProvider implements vscode.CodeLensProvider {
           // Show delegate button
           lenses.push(
             new vscode.CodeLens(range, {
-              title: "$(forge-logo) Delegate to Forge",
+              title: "$(forge-logo)\u00a0Delegate to Forge",
               tooltip: "Send this context to Forge CLI",
               command: "forgecode.delegateToForge",
               arguments: [
