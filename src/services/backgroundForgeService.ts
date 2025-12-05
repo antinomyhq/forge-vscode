@@ -254,7 +254,7 @@ export class BackgroundForgeService {
       this.notificationService.showCopyReferenceInActivityBar(
         `✓ ${context.tag} task completed (${duration}s)`
       );
-    } else if (code === null) {
+    } else if (code === null || task.status === "cancelled") {
       // Process was killed (either by user or system)
       // Status might already be "cancelled" if user clicked stop button
       if (task.status !== "cancelled") {
@@ -262,6 +262,11 @@ export class BackgroundForgeService {
       }
       task.outputChannel.appendLine(`[CANCELLED] ${context.tag} task was cancelled`);
       this.masterOutputChannel.appendLine(`[CANCELLED] ${context.tag} at ${task.filePath}:${task.line + 1} was cancelled`);
+
+      this.notificationService.showNotificationIfEnabled(
+        `${context.tag} task cancelled`,
+        "info"
+      );
     } else {
       task.status = "failed";
       task.outputChannel.appendLine(`[FAILED] ${context.tag} task failed with code ${code}`);
