@@ -69,5 +69,27 @@ export class ConfigService {
   getCommitMessageMaxDiffSize(): number {
     return this.getConfig().get<number>("commitMessage.maxDiffSize", 10000);
   }
+
+  /**
+   * Check if CodeLens is enabled
+   * @returns true if CodeLens is enabled (default: true)
+   */
+  isCodeLensEnabled(): boolean {
+    return this.getConfig().get<boolean>("codeLens.enabled", true);
+  }
+
+  /**
+   * Get CodeLens patterns to detect
+   * @returns Array of patterns (default: ["TODO", "FIXME", "BUG", "HACK", "NOTE"])
+   */
+  getCodeLensPatterns(): string[] {
+    return this.getConfig().get<string[]>("codeLens.patterns", [
+      "TODO",
+      "FIXME",
+      "BUG",
+      "HACK",
+      "NOTE",
+    ]);
+  }
 }
 

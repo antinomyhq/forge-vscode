@@ -14,12 +14,14 @@ import {
   NO_GIT_REPO_MESSAGE,
   NO_WORKSPACE_MESSAGE,
 } from "../constants";
+import { getFilePathWithFormat } from "../utils/pathUtils";
 import { ConfigService } from "./configService";
 import { FileReferenceService } from "./fileReferenceService";
 import { GitService } from "./gitService";
 import { NotificationService } from "./notificationService";
 import { ProcessService } from "./processService";
 import { TerminalService } from "./terminalService";
+import { BackgroundForgeService } from "./backgroundForgeService";
 
 // Handles all Forge command logic
 export class CommandService {
@@ -29,7 +31,8 @@ export class CommandService {
     private fileReferenceService: FileReferenceService,
     private notificationService: NotificationService,
     private terminalService: TerminalService,
-    private gitService: GitService
+    private gitService: GitService,
+    private backgroundForgeService: BackgroundForgeService
   ) {}
 
   // Start new Forge session
@@ -515,5 +518,62 @@ export class CommandService {
       "Updating Forge to the latest version...",
       "info"
     );
+  }
+
+  // Delegate TODO/FIXME/BUG to Forge CLI (runs in background)
+  async delegateToForge(context: {
+    uri: vscode.Uri;
+    line: number;
+    lineText: string;
+    tag: string;
+  }): Promise<void> {
+    try {
+      const filePath = getFilePathWithFormat(context.uri, undefined, this.configService);
+      const taskDescription = context.lineText
+        .replace(/\/\/\s*|#\s*/g, "")
+        .trim();
+
+      const fileReference = `@[${filePath}:${context.line + 1}]`;
+      const forgeMessage = `${fileReference} ${taskDescription}`;
+
+      // Run task in background (no terminal) - fire and forget for parallel execution
+      this.backgroundForgeService.runBackgroundTask(forgeMessage, {
+        uri: context.uri,
+        line: context.line,
+        tag: context.tag,
+        filePath,
+      });
+    } catch (error) {
+      this.notificationService.showNotificationIfEnabled(
+        `Error delegating to Forge: ${error}`,
+        "error"
+      );
+    }
+  }
+
+  // Show background tasks panel
+  async showBackgroundTasks(): Promise<void> {
+    await this.backgroundForgeService.showBackgroundTasks();
+  }
+
+  // Stop all background tasks
+  async stopAllBackgroundTasks(): Promise<void> {
+    const stopped = this.backgroundForgeService.stopAllTasks();
+    if (stopped === 0) {
+      vscode.window.showInformationMessage("No background tasks to stop");
+    }
+  }
+
+  // Stop a specific background task
+  async stopTask(taskId: string): Promise<void> {
+    const stopped = this.backgroundForgeService.stopTask(taskId);
+    if (stopped) {
+      this.notificationService.showCopyReferenceInActivityBar("Background task stopped");
+    } else {
+      this.notificationService.showNotificationIfEnabled(
+        "Task not found or already completed",
+        "warning"
+      );
+    }
   }
 }
